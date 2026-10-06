@@ -44,7 +44,7 @@ import net.fabricmc.loader.api.metadata.ModOrigin;
  */
 public final class ModUpdater {
 	/** The GitHub repository ("owner/name") whose Releases carry the mod. */
-	public static final String DEFAULT_REPO = "OWNER/entity-303";
+	public static final String DEFAULT_REPO = "kit531/entity-303";
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final Pattern REPO = Pattern.compile("[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+");
