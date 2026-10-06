@@ -24,6 +24,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -38,6 +39,8 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Entity 303: a 1000 HP boss with a custom boss bar, three phases and a set of special attacks
@@ -67,9 +70,15 @@ public class Entity303 extends Monster {
 	public static final float FINAL_DAMAGE_BONUS = 1.5F;
 	/** Every player beyond the first one near him (up to CROWD_CAP players) makes his attacks hit this much harder... */
 	public static final float CROWD_DAMAGE_PER_PLAYER = 0.10F;
-	/** ...and makes him take this much less damage (fighting 5 players: +40% damage dealt, 1/1.4 damage taken). */
-	public static final float CROWD_TOUGHNESS_PER_PLAYER = 0.10F;
+	/** ...and makes him take this much less damage, but never more than CROWD_TOUGHNESS_MAX (no crowd makes him unkillable). */
+	public static final float CROWD_TOUGHNESS_PER_PLAYER = 0.06F;
+	public static final float CROWD_TOUGHNESS_MAX = 0.24F;
 	public static final int CROWD_CAP = 8;
+	/** Health he can steal back (life steal, Soul Drain): at most this much per tick on average, saved up to a maximum. */
+	public static final float HEAL_PER_TICK = 0.4F;
+	public static final float HEAL_BUDGET_MAX = 30.0F;
+	/** He keeps his target until it dies or is farther away than this (blocks). */
+	public static final double TARGET_REACH = 40.0;
 	/** While he is guarding (Reaper's Guard) he only takes this fraction of the damage. */
 	public static final float GUARD_DAMAGE_FACTOR = 0.2F;
 	/** How long the death animation plays before he disappears (ticks). */
@@ -84,6 +93,7 @@ public class Entity303 extends Monster {
 	/** Set when he is freshly summoned: the attack goal then plays the "climbs out of the ground" intro. */
 	private boolean introPending;
 	private int crowdSize = 1;
+	private float healBudget = HEAL_BUDGET_MAX;
 	/** Hits taken while guarding: the counter burst of Reaper's Guard grows with them. */
 	private int guardHits;
 
@@ -119,7 +129,14 @@ public class Entity303 extends Monster {
 		this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.8));
 		this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 16.0F));
 		this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
-		this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
+		// he keeps his target: whoever hits him does not steal his attention while his target is alive
+		this.targetSelector.addGoal(1, new HurtByTargetGoal(this) {
+			@Override
+			public boolean canUse() {
+				LivingEntity current = Entity303.this.getTarget();
+				return (current == null || !current.isAlive()) && super.canUse();
+			}
+		});
 		this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
 	}
 
@@ -283,6 +300,7 @@ public class Entity303 extends Monster {
 		if (this.tickCount % 10 == 0) {
 			this.crowdSize = Math.max(1, this.nearbyPlayers(level, Entity303AttackGoal.AWARE_RADIUS).size());
 		}
+		this.healBudget = Math.min(HEAL_BUDGET_MAX, this.healBudget + HEAL_PER_TICK);
 		int attack = this.getAttack();
 		if (this.isNoGravity() && attack != Entity303Animations.WHIRL && attack != Entity303Animations.LEAP) {
 			this.setNoGravity(false); // safety net: he only flies during Reaper's Descent and the Death Leap
@@ -308,6 +326,20 @@ public class Entity303 extends Monster {
 		if (phase >= FINAL_PHASE) {
 			this.removeAllEffects(); // final form: nothing sticks to him any more
 		}
+	}
+
+	/** Heals him with health taken from players, within the heal budget (so a big crowd cannot be out-healed forever). */
+	void stealHealth(float amount) {
+		float given = Math.min(amount, this.healBudget);
+		if (given > 0.0F) {
+			this.healBudget -= given;
+			this.heal(given);
+		}
+	}
+
+	/** Cobwebs, sweet berry bushes and powder snow do not slow him down. */
+	@Override
+	public void makeStuckInBlock(BlockState state, Vec3 motionMultiplier) {
 	}
 
 	/** In the final form he is immune to every effect, good or bad (potions, beacons, tipped arrows, wither, ...). */
@@ -356,7 +388,8 @@ public class Entity303 extends Monster {
 			return false; // the crash of Reaper's Descent and the Death Leap must not hurt him
 		}
 		if (!source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
-			amount /= 1.0F + CROWD_TOUGHNESS_PER_PLAYER * this.extraPlayers(); // tougher against a crowd
+			// tougher against a crowd, with a ceiling so that no number of players makes him invincible
+			amount /= 1.0F + Math.min(CROWD_TOUGHNESS_MAX, CROWD_TOUGHNESS_PER_PLAYER * this.extraPlayers());
 		}
 		if (this.isGuarding() && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
 			amount *= GUARD_DAMAGE_FACTOR;

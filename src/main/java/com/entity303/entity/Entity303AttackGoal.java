@@ -61,6 +61,8 @@ public class Entity303AttackGoal extends Goal {
 	private static final double PULL_RADIUS = 26.0;
 	private static final double HOVER_HEIGHT = 7.0;
 	private static final double IMPACT_RADIUS = 8.0;
+	/** Players dragged by the Descent stop here, a margin outside the crash circle: nobody is pulled into the damage. */
+	private static final double PULL_STOP = IMPACT_RADIUS + 3.0;
 	/** Reaper's Descent takes this fraction of the victim's MAXIMUM health, ignoring armor, enchantments, effects and shields. */
 	private static final float DESCENT_FRACTION = 0.5F;
 	/** ...and this fraction in the final phase. */
@@ -80,7 +82,6 @@ public class Entity303AttackGoal extends Goal {
 
 	private List<ServerPlayer> players = List.of();
 	private int playersAge;
-	private int retargetTimer = 100;
 	private int minionTimer;
 
 	// Reaper's Descent
@@ -272,20 +273,20 @@ public class Entity303AttackGoal extends Goal {
 		}
 	}
 
-	/** With several players around him he does not stay glued to one of them. */
+	/**
+	 * He keeps his target until it dies, leaves creative/spectator or gets farther away than
+	 * {@link Entity303#TARGET_REACH}; only then does he switch to the nearest other player.
+	 */
 	private void maybeRetarget(LivingEntity current) {
+		boolean lost = !current.isAlive()
+			|| this.boss.distanceTo(current) > Entity303.TARGET_REACH
+			|| (current instanceof Player player && (player.isCreative() || player.isSpectator()));
+		if (!lost) {
+			return;
+		}
 		List<ServerPlayer> crowd = this.crowd();
-		if (crowd.size() < 2) {
-			return;
-		}
-		boolean far = this.boss.distanceTo(current) > 24.0 && this.boss.distanceTo(crowd.get(0)) < 14.0;
-		if (--this.retargetTimer > 0 && !far) {
-			return;
-		}
-		this.retargetTimer = 100 + this.boss.getRandom().nextInt(100);
-		ServerPlayer pick = far ? crowd.get(0) : crowd.get(this.boss.getRandom().nextInt(crowd.size()));
-		if (pick != current) {
-			this.boss.setTarget(pick);
+		if (!crowd.isEmpty() && crowd.get(0) != current) {
+			this.boss.setTarget(crowd.get(0)); // the list is sorted by distance: the nearest one
 		}
 	}
 
@@ -364,8 +365,11 @@ public class Entity303AttackGoal extends Goal {
 		boolean validTarget = target != null && target.isAlive();
 		if (attack != Entity303Animations.WHIRL) {
 			this.boss.getNavigation().stop();
-			if (validTarget) {
-				this.boss.getLookControl().setLookAt(target, 60.0F, 60.0F);
+			// in the Phantom Dance he faces whoever he has just jumped to; otherwise his target
+			LivingEntity face = attack == Entity303Animations.DANCE && this.danceLast != null && this.danceLast.isAlive()
+				? this.danceLast : (validTarget ? target : null);
+			if (face != null) {
+				this.boss.getLookControl().setLookAt(face, 60.0F, 60.0F);
 			}
 		}
 		LivingEntity aim = validTarget ? target : null;
@@ -579,9 +583,7 @@ public class Entity303AttackGoal extends Goal {
 
 	private void step(ServerLevel level, int t, LivingEntity target) {
 		if (t == 0) {
-			// with several players around, he jumps to a random one instead of always the same
-			List<ServerPlayer> crowd = this.crowd();
-			this.stepTarget = crowd.size() >= 2 ? crowd.get(this.boss.getRandom().nextInt(crowd.size())) : target;
+			this.stepTarget = target; // he jumps to his own target, whoever else is around
 			this.sound(level, SoundEvents.ENDERMAN_TELEPORT, 2.0F, 0.5F);
 		}
 		if (t < Entity303Animations.STEP_TP) {
@@ -594,7 +596,6 @@ public class Entity303AttackGoal extends Goal {
 				level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, from.x, from.y + 1.2, from.z, 40, 0.5, 1.2, 0.5, 0.1);
 				level.sendParticles(ParticleTypes.REVERSE_PORTAL, this.boss.getX(), this.boss.getY() + 1.4, this.boss.getZ(), 40, 0.5, 1.2, 0.5, 0.3);
 				this.sound(level, SoundEvents.ENDERMAN_TELEPORT, 2.0F, 0.7F);
-				this.boss.setTarget(to);
 			}
 		}
 	}
@@ -716,7 +717,7 @@ public class Entity303AttackGoal extends Goal {
 			// phases 1-2: every extra victim heals him a little less than the first; in the final phase the
 			// life steal of damage() already pays him back, so the drain does not heal on top of it
 			if (this.boss.getPhase() < Entity303.FINAL_PHASE) {
-				this.boss.heal(damage * 0.75F * (1.0F + 0.5F * (hits - 1)));
+				this.boss.stealHealth(damage * 0.75F * (1.0F + 0.5F * (hits - 1)));
 			}
 			level.sendParticles(ParticleTypes.SCULK_SOUL, to.x, to.y, to.z, 3, 0.3, 0.3, 0.3, 0.02);
 		}
@@ -956,8 +957,7 @@ public class Entity303AttackGoal extends Goal {
 					level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, from.x, from.y + 1.2, from.z, 40, 0.5, 1.2, 0.5, 0.1);
 					level.sendParticles(ParticleTypes.REVERSE_PORTAL, this.boss.getX(), this.boss.getY() + 1.4, this.boss.getZ(), 40, 0.5, 1.2, 0.5, 0.3);
 					this.sound(level, SoundEvents.ENDERMAN_TELEPORT, 2.0F, 0.7F + 0.15F * (this.danceLast == null ? 0 : 1));
-					this.boss.setTarget(to);
-					this.danceLast = to;
+					this.danceLast = to; // he faces the player he jumped to; his real target does not change
 				}
 			}
 		}
@@ -1135,17 +1135,29 @@ public class Entity303AttackGoal extends Goal {
 			double dx = cx - victim.getX();
 			double dz = cz - victim.getZ();
 			double dist = Math.sqrt(dx * dx + dz * dz);
-			if (dist > PULL_RADIUS) {
+			// whoever is already near him (inside the crash circle and its margin) is not touched at all: he can
+			// simply run out of the circle. Only the far players are dragged, and only up to the edge of the margin.
+			if (dist > PULL_RADIUS || dist <= PULL_STOP) {
 				continue;
 			}
 			Vec3 motion = victim.getDeltaMovement();
-			double pull = dist < 1.0 ? 0.0 : Mth.clamp(0.16 + dist * 0.012, 0.16, 0.42);
-			double nx = dist < 1.0E-3 ? 0.0 : dx / dist;
-			double nz = dist < 1.0E-3 ? 0.0 : dz / dist;
+			double pull = Math.min(Mth.clamp(0.16 + dist * 0.012, 0.16, 0.42), dist - PULL_STOP);
+			double nx = dx / dist;
+			double nz = dz / dist;
 			// pinned to the floor: no jumping, no flying away
 			victim.setDeltaMovement(motion.x * 0.3 + nx * pull, Math.min(motion.y, -0.2), motion.z * 0.3 + nz * pull);
 			victim.fallDistance = 0.0;
 			victim.hurtMarked = true;
+		}
+
+		// the crash circle: exactly this ring (radius IMPACT_RADIUS) is where it hits; outside of it nothing does
+		if (t % 2 == 0) {
+			double closing = (t - 4) / (double) (Entity303Animations.WHIRL_IMPACT - 4);
+			int points = 48 + (int) (closing * 48);
+			for (int i = 0; i < points; i++) {
+				double a = i * (Math.PI * 2.0 / points);
+				level.sendParticles(RED_DUST, cx + Math.cos(a) * IMPACT_RADIUS, ground + 0.12, cz + Math.sin(a) * IMPACT_RADIUS, 1, 0.0, 0.0, 0.0, 0.0);
+			}
 		}
 
 		// the vortex on the floor: rings that shrink towards him
@@ -1326,7 +1338,7 @@ public class Entity303AttackGoal extends Goal {
 		if (hurt && this.boss.getPhase() >= Entity303.FINAL_PHASE) {
 			float taken = before - (victim.getHealth() + victim.getAbsorptionAmount());
 			if (taken > 0.0F) {
-				this.boss.heal(taken * Entity303.LIFESTEAL_FRACTION);
+				this.boss.stealHealth(taken * Entity303.LIFESTEAL_FRACTION);
 				level.sendParticles(ParticleTypes.SCULK_SOUL, this.boss.getX(), this.boss.getY() + 1.8, this.boss.getZ(), 2, 0.3, 0.4, 0.3, 0.02);
 			}
 		}

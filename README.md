@@ -9,7 +9,7 @@ Adds **Entity 303** (the white hooded figure with the black face, red eyes and a
 * three phases (66% / 33% HP): faster, harder hitting, more attacks, a roar + shockwave at every phase change
 * special attacks: **Sweep** (overhead chop), **Soul Slash** (beam of soul fire, 3-way fan from phase 2),
   **Shadow Step** (teleports behind you and chops), **Summon** (vexes), **Soul Drain** (slows, blinds and heals him),
-  **Reaper's Descent** (flies up spinning, drags everyone to the floor, crashes down: half of the max health of whoever is hit, 75% in the final phase),
+  **Reaper's Descent** (flies up spinning, drags everyone to the floor, crashes down: half of the max health, 75% in the final phase, of whoever is inside the red crash circle - the far players are only dragged to its edge, so it can really be escaped),
   **Reaper's Wrath** (marks the ground under every player, then explodes)
 * more moves: **Crossing Slashes** (two-hit combo), **Reaper's Lunge** (dash + thrust), **Death Leap** (jumps at you and crashes down),
   **Soul Hook** (chain that drags far players to him, followed by a sweep), **Soul Rings** (three stomps, rings of soul fire - jump them),
@@ -18,7 +18,7 @@ Adds **Entity 303** (the white hooded figure with the black face, red eyes and a
 * extras: climbs out of the ground when summoned, a death animation (falls on his back), a taunt, a restless "rage" idle in the final phase,
   legs in the animations (crouch, lunge, leap)
 * **final form (phase 3):** immune to every effect (good or bad, potions included), all his attacks hit 1.5x harder, and he heals for 50% of the health he takes from players
-* **fights harder against a crowd (all phases):** every extra survival player within 40 blocks (up to 8) makes his attacks hit 10% harder and lets him take 10% less damage (5 players: +40% dealt, /1.4 taken); alone he has no bonus
+* **fights harder against a crowd (all phases):** every extra survival player within 40 blocks (up to 8) makes his attacks hit 10% harder and lets him take 6% less damage (never more than 24% less, so no crowd makes him invincible); alone he has no bonus
 * he counts the players around him: more beams, drains and minions, shorter pauses (work in progress, see TODO_HANDOFF.md)
 * drops: 2 nether stars, 16-32 diamonds, 4-8 netherite scrap, a totem of undying, 1-3 enchanted golden apples, 500 XP
 
@@ -64,3 +64,5 @@ game, the Blender preview and the server-side timing always come from the same d
 
 Windows note: the project path must be short (Windows 260-character limit for some tools); if the folder is deeply nested,
 set `ENTITY303_ROOT` to a short path (a junction works) before running the Python/Blender scripts.
+* he keeps his target until it dies or is farther than 40 blocks, then switches to the nearest player (hitting him does not steal his attention);
+  cobwebs, berry bushes and powder snow do not slow him; life steal and Soul Drain heal at most 8 HP/s on average (30 HP burst)
