@@ -1,0 +1,6 @@
+{
+	"entity.entity303.entity_303": "Entity 303",
+	"item.entity303.entity_303_spawn_egg": "Entity 303 Spawn Egg",
+	"death.attack.entity303.reaper_descent": "%1$s was crushed by the descent of Entity 303",
+	"death.attack.entity303.reaper_descent.player": "%1$s was crushed by %2$s's descent"
+}

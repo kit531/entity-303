@@ -1,0 +1,26 @@
+{
+	"schemaVersion": 1,
+	"id": "entity303",
+	"version": "${version}",
+	"name": "Entity 303",
+	"description": "Adds Entity 303 as a boss: 1000 HP, a boss bar, a spinning scythe and special attacks.",
+	"authors": [
+		"adamk"
+	],
+	"license": "CC0-1.0",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.entity303.Entity303Mod"
+		],
+		"client": [
+			"com.entity303.client.Entity303Client"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.18.0",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}

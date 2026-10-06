@@ -1,0 +1,42 @@
+# Publishes a release when a version tag is pushed:   git tag v1.2.2 && git push origin v1.2.2
+# The release carries the mod jar and its .sha256 file; the in-game updater (ModUpdater) downloads exactly those.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Version from the tag
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew build -Pmod_version="$VERSION" --no-daemon --console=plain
+
+      - name: Checksum
+        working-directory: build/libs
+        run: sha256sum "entity-303-${VERSION}.jar" > "entity-303-${VERSION}.jar.sha256"
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            "build/libs/entity-303-${VERSION}.jar" \
+            "build/libs/entity-303-${VERSION}.jar.sha256" \
+            --title "Entity 303 ${VERSION}" --generate-notes
