@@ -24,7 +24,6 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -77,7 +76,7 @@ public class Entity303 extends Monster {
 	/** Health he can steal back (life steal, Soul Drain): at most this much per tick on average, saved up to a maximum. */
 	public static final float HEAL_PER_TICK = 0.4F;
 	public static final float HEAL_BUDGET_MAX = 30.0F;
-	/** He keeps his target until it dies or is farther away than this (blocks). */
+	/** A target farther away than this (blocks) is lost: he switches to a nearer player at once. */
 	public static final double TARGET_REACH = 40.0;
 	/** While he is guarding (Reaper's Guard) he only takes this fraction of the damage. */
 	public static final float GUARD_DAMAGE_FACTOR = 0.2F;
@@ -129,14 +128,7 @@ public class Entity303 extends Monster {
 		this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.8));
 		this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 16.0F));
 		this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
-		// he keeps his target: whoever hits him does not steal his attention while his target is alive
-		this.targetSelector.addGoal(1, new HurtByTargetGoal(this) {
-			@Override
-			public boolean canUse() {
-				LivingEntity current = Entity303.this.getTarget();
-				return (current == null || !current.isAlive()) && super.canUse();
-			}
-		});
+		this.targetSelector.addGoal(1, new HurtByTargetGoal(this)); // whoever hits him can take his attention
 		this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
 	}
 

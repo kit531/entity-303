@@ -83,6 +83,7 @@ public class Entity303AttackGoal extends Goal {
 	private List<ServerPlayer> players = List.of();
 	private int playersAge;
 	private int minionTimer;
+	private int retargetTimer = 100;
 
 	// Reaper's Descent
 	private double hoverBaseY;
@@ -274,19 +275,26 @@ public class Entity303AttackGoal extends Goal {
 	}
 
 	/**
-	 * He keeps his target until it dies, leaves creative/spectator or gets farther away than
-	 * {@link Entity303#TARGET_REACH}; only then does he switch to the nearest other player.
+	 * With several players around him he does not stay glued to one of them: every 5-10 seconds he picks a random
+	 * one, and at once when his target is far away while somebody else is close.
 	 */
 	private void maybeRetarget(LivingEntity current) {
-		boolean lost = !current.isAlive()
-			|| this.boss.distanceTo(current) > Entity303.TARGET_REACH
-			|| (current instanceof Player player && (player.isCreative() || player.isSpectator()));
-		if (!lost) {
+		List<ServerPlayer> crowd = this.crowd();
+		boolean lost = !current.isAlive() || this.boss.distanceTo(current) > Entity303.TARGET_REACH;
+		if (crowd.size() < 2 && !lost) {
 			return;
 		}
-		List<ServerPlayer> crowd = this.crowd();
-		if (!crowd.isEmpty() && crowd.get(0) != current) {
-			this.boss.setTarget(crowd.get(0)); // the list is sorted by distance: the nearest one
+		boolean far = this.boss.distanceTo(current) > 24.0 && !crowd.isEmpty() && this.boss.distanceTo(crowd.get(0)) < 14.0;
+		if (--this.retargetTimer > 0 && !far && !lost) {
+			return;
+		}
+		this.retargetTimer = 100 + this.boss.getRandom().nextInt(100);
+		if (crowd.isEmpty()) {
+			return;
+		}
+		ServerPlayer pick = far || lost ? crowd.get(0) : crowd.get(this.boss.getRandom().nextInt(crowd.size()));
+		if (pick != current) {
+			this.boss.setTarget(pick);
 		}
 	}
 
@@ -583,7 +591,9 @@ public class Entity303AttackGoal extends Goal {
 
 	private void step(ServerLevel level, int t, LivingEntity target) {
 		if (t == 0) {
-			this.stepTarget = target; // he jumps to his own target, whoever else is around
+			// with several players around, he jumps to a random one instead of always the same
+			List<ServerPlayer> crowd = this.crowd();
+			this.stepTarget = crowd.size() >= 2 ? crowd.get(this.boss.getRandom().nextInt(crowd.size())) : target;
 			this.sound(level, SoundEvents.ENDERMAN_TELEPORT, 2.0F, 0.5F);
 		}
 		if (t < Entity303Animations.STEP_TP) {
@@ -596,6 +606,7 @@ public class Entity303AttackGoal extends Goal {
 				level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, from.x, from.y + 1.2, from.z, 40, 0.5, 1.2, 0.5, 0.1);
 				level.sendParticles(ParticleTypes.REVERSE_PORTAL, this.boss.getX(), this.boss.getY() + 1.4, this.boss.getZ(), 40, 0.5, 1.2, 0.5, 0.3);
 				this.sound(level, SoundEvents.ENDERMAN_TELEPORT, 2.0F, 0.7F);
+				this.boss.setTarget(to);
 			}
 		}
 	}
@@ -957,7 +968,8 @@ public class Entity303AttackGoal extends Goal {
 					level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, from.x, from.y + 1.2, from.z, 40, 0.5, 1.2, 0.5, 0.1);
 					level.sendParticles(ParticleTypes.REVERSE_PORTAL, this.boss.getX(), this.boss.getY() + 1.4, this.boss.getZ(), 40, 0.5, 1.2, 0.5, 0.3);
 					this.sound(level, SoundEvents.ENDERMAN_TELEPORT, 2.0F, 0.7F + 0.15F * (this.danceLast == null ? 0 : 1));
-					this.danceLast = to; // he faces the player he jumped to; his real target does not change
+					this.boss.setTarget(to);
+					this.danceLast = to;
 				}
 			}
 		}

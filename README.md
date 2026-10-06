@@ -64,5 +64,5 @@ game, the Blender preview and the server-side timing always come from the same d
 
 Windows note: the project path must be short (Windows 260-character limit for some tools); if the folder is deeply nested,
 set `ENTITY303_ROOT` to a short path (a junction works) before running the Python/Blender scripts.
-* he keeps his target until it dies or is farther than 40 blocks, then switches to the nearest player (hitting him does not steal his attention);
+* he switches between players: every 5-10 seconds he picks a random one (at once when his target is farther than 24 blocks while somebody is close, or farther than 40);
   cobwebs, berry bushes and powder snow do not slow him; life steal and Soul Drain heal at most 8 HP/s on average (30 HP burst)
