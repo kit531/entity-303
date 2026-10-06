@@ -17,7 +17,8 @@ Adds **Entity 303** (the white hooded figure with the black face, red eyes and a
   stronger for every hit he absorbed), **Soul Rain** (marked columns of soul fire fall around the players)
 * extras: climbs out of the ground when summoned, a death animation (falls on his back), a taunt, a restless "rage" idle in the final phase,
   legs in the animations (crouch, lunge, leap)
-* **final form (phase 3):** immune to every effect (good or bad, potions included), all his attacks hit twice as hard, and he heals for 50% of the health he takes from players
+* **final form (phase 3):** immune to every effect (good or bad, potions included), all his attacks hit 1.5x harder, and he heals for 50% of the health he takes from players
+* **fights harder against a crowd (all phases):** every extra survival player within 40 blocks (up to 8) makes his attacks hit 10% harder and lets him take 10% less damage (5 players: +40% dealt, /1.4 taken); alone he has no bonus
 * he counts the players around him: more beams, drains and minions, shorter pauses (work in progress, see TODO_HANDOFF.md)
 * drops: 2 nether stars, 16-32 diamonds, 4-8 netherite scrap, a totem of undying, 1-3 enchanted golden apples, 500 XP
 

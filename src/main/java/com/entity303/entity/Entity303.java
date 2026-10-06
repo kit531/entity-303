@@ -63,8 +63,13 @@ public class Entity303 extends Monster {
 	public static final int FINAL_PHASE = 3;
 	/** In the final phase he heals this fraction of the health he takes from players. */
 	public static final float LIFESTEAL_FRACTION = 0.5F;
-	/** In the final phase every one of his attacks hits this many times harder. */
-	public static final float FINAL_DAMAGE_BONUS = 2.0F;
+	/** In the final phase every one of his attacks hits this many times harder (was 2.0, lowered a little). */
+	public static final float FINAL_DAMAGE_BONUS = 1.5F;
+	/** Every player beyond the first one near him (up to CROWD_CAP players) makes his attacks hit this much harder... */
+	public static final float CROWD_DAMAGE_PER_PLAYER = 0.10F;
+	/** ...and makes him take this much less damage (fighting 5 players: +40% damage dealt, 1/1.4 damage taken). */
+	public static final float CROWD_TOUGHNESS_PER_PLAYER = 0.10F;
+	public static final int CROWD_CAP = 8;
 	/** While he is guarding (Reaper's Guard) he only takes this fraction of the damage. */
 	public static final float GUARD_DAMAGE_FACTOR = 0.2F;
 	/** How long the death animation plays before he disappears (ticks). */
@@ -78,6 +83,7 @@ public class Entity303 extends Monster {
 	private boolean roarRequested;
 	/** Set when he is freshly summoned: the attack goal then plays the "climbs out of the ground" intro. */
 	private boolean introPending;
+	private int crowdSize = 1;
 	/** Hits taken while guarding: the counter burst of Reaper's Guard grows with them. */
 	private int guardHits;
 
@@ -218,13 +224,24 @@ public class Entity303 extends Monster {
 		return level.getPlayers(p -> p.isAlive() && !p.isCreative() && !p.isSpectator() && p.distanceToSqr(this) < r2);
 	}
 
-	/** Damage multiplier of the current phase (includes DAMAGE_SCALE). */
+	/** Survival players around him (updated twice a second); the more there are, the harder he hits and the tougher he is. */
+	public int crowdSize() {
+		return this.crowdSize;
+	}
+
+	/** Players beyond the first one that count (0 when he fights alone). */
+	private int extraPlayers() {
+		return Math.min(this.crowdSize, CROWD_CAP) - 1;
+	}
+
+	/** Damage multiplier of the current phase and of the number of players around him (includes DAMAGE_SCALE). */
 	float damageMultiplier() {
-		return switch (this.getPhase()) {
+		float phase = switch (this.getPhase()) {
 			case 3 -> 1.5F * FINAL_DAMAGE_BONUS * DAMAGE_SCALE;
 			case 2 -> 1.25F * DAMAGE_SCALE;
 			default -> DAMAGE_SCALE;
 		};
+		return phase * (1.0F + CROWD_DAMAGE_PER_PLAYER * this.extraPlayers());
 	}
 
 	/** How much the pauses between attacks shrink in the current phase. */
@@ -262,6 +279,9 @@ public class Entity303 extends Monster {
 		super.customServerAiStep(level);
 		if (this.invulnerableTicks > 0) {
 			this.invulnerableTicks--;
+		}
+		if (this.tickCount % 10 == 0) {
+			this.crowdSize = Math.max(1, this.nearbyPlayers(level, Entity303AttackGoal.AWARE_RADIUS).size());
 		}
 		int attack = this.getAttack();
 		if (this.isNoGravity() && attack != Entity303Animations.WHIRL && attack != Entity303Animations.LEAP) {
@@ -334,6 +354,9 @@ public class Entity303 extends Monster {
 		}
 		if (source.is(DamageTypeTags.IS_FALL)) {
 			return false; // the crash of Reaper's Descent and the Death Leap must not hurt him
+		}
+		if (!source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+			amount /= 1.0F + CROWD_TOUGHNESS_PER_PLAYER * this.extraPlayers(); // tougher against a crowd
 		}
 		if (this.isGuarding() && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
 			amount *= GUARD_DAMAGE_FACTOR;

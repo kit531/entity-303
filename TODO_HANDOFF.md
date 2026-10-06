@@ -64,7 +64,7 @@
 
 * **משימה 1 (קבצי הנתונים של Reaper's Descent) בוצעה** (`damage_type/reaper_descent.json`, שש תגיות `bypasses_*`, הודעות מוות) ו‑`mod_version` = 1.1.0.
 * **שלב 3 ("FINAL FORM"):** חסין לכל אפקט (טוב או רע, גם שיקויים: `canBeAffected` + `isAffectedByPotions` ב‑`Entity303.java`),
-  כל ההתקפות פי 2 נזק (`FINAL_DAMAGE_BONUS`, הפירוש שלי ל"תוקף פי שתיים") וגונב 50% מהחיים שהוא לוקח משחקנים
+  כל ההתקפות פי 1.5 נזק (`FINAL_DAMAGE_BONUS`, הורד מ‑2.0; הפירוש שלי ל"תוקף פי שתיים") וגונב 50% מהחיים שהוא לוקח משחקנים
   (`LIFESTEAL_FRACTION`; כל הנזק עובר דרך `damage()` ב‑`Entity303AttackGoal`; ה‑Drain לא מרפא בנוסף בשלב 3).
   ה‑Descent נשאר 50% מהחיים המקסימליים (לא מוכפל).
 * **12 אנימציות חדשות** (הוגדרו ב‑`tools/animations.py`, תזמון בצד השרת ב‑`Entity303AttackGoal`):
@@ -215,3 +215,10 @@ reference/                        תמונות ייחוס
 * ה‑jar חייב Fabric API באותו פרופיל (בשגיאת הגרסה של ה‑Loader זה לא נראה בהתחלה).
 * ב‑`tools/jp.sh` וב‑`tools/src.py` יש נתיב ברירת מחדל `C:/rb` — לשנות ל‑`ENTITY303_ROOT`/הנתיב שלך.
 * מעטפת Git Bash על ווינדוס "מתקנת" לפעמים `\\` בפקודות; כדאי להשתמש ב‑PowerShell/עורך לקבצים עם לוכסנים הפוכים.
+
+## 9. חוזק לפי מספר שחקנים (אוקטובר 2026)
+
+* `Entity303.CROWD_DAMAGE_PER_PLAYER` / `CROWD_TOUGHNESS_PER_PLAYER` (10% כל אחד) / `CROWD_CAP` (8): כל שחקן survival נוסף ברדיוס 40 בלוקים
+  מוסיף 10% לנזק של ההתקפות (`damageMultiplier()`) ומוריד 10% מהנזק שהוא סופג (`hurtServer`). שחקן יחיד: בלי בונוס. חל בכל השלבים.
+* שלב 3 הוחלש מעט: `FINAL_DAMAGE_BONUS` 2.0 → 1.5 (נזק בסיס שלב 3 מול שחקן יחיד: ×4.5 במקום ×6; מול 5 שחקנים ≈ ×6.3).
+* ה‑Reaper's Descent לא מושפע מהמכפילים (50% מהחיים המקסימליים, 75% בשלב 3).
