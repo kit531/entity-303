@@ -44,8 +44,8 @@ def sw(arm_rx, world, rz=0.0):
 WHEEL = dict(scythe=[0, 0, 90], scythe_pivot=[0, 0, 0])
 SIDE = dict(scythe=[0, 0, 0])
 
-# the rest pose: right arm held straight ahead at shoulder height, the scythe spinning like a wheel in front
-IDLE = dict(WHEEL, right_arm=[-90, 6, 0], left_arm=[6, 0, -6], head=[0, 0, 0], body=[0, 0, 0],
+# the rest pose: right arm held out to the side, the scythe spinning like a wheel beside him (clear of his body at every angle)
+IDLE = dict(WHEEL, right_arm=[-10, 0, 95], left_arm=[6, 0, -6], head=[0, 0, 0], body=[0, 0, 0],
             root=[0, 0, 0], off=[0, 0, 0], right_leg=[0, 0, 0], left_leg=[0, 0, 0])
 
 # poses shared by several attacks (SIDE holding, see above)
@@ -73,7 +73,7 @@ ANIMS = {
     # id 0 -- loops forever while he is not attacking; the scythe is twirled in his hand like a baton
     "idle": dict(id=0, duration=80, loop=True, events={}, keys=[
         key(0, IDLE, spin=[0.14, 0]),
-        key(40, IDLE, right_arm=[-94, 8, 0], left_arm=[-2, 0, -9], head=[3, 8, 0], body=[0, 3, 0], off=[0, -0.5, 0]),
+        key(40, IDLE, right_arm=[-16, 0, 99], left_arm=[-2, 0, -9], head=[3, 8, 0], body=[0, 3, 0], off=[0, -0.5, 0]),
         key(80, IDLE),
     ]),
 
@@ -313,7 +313,7 @@ ANIMS = {
     # idle while he is in his final form: a hunched, restless stance and a faster twirl (loops)
     "idle_rage": dict(id=20, duration=56, loop=True, events={}, keys=[
         key(0, RAGE, spin=[0.3, 0]),
-        key(28, RAGE, right_arm=[-94, 10, 0], head=[14, 10, 0], body=[10, -4, 0], off=[0, -1, 0]),
+        key(28, RAGE, right_arm=[-16, 0, 99], head=[14, 10, 0], body=[10, -4, 0], off=[0, -1, 0]),
         key(56, RAGE),
     ]),
 }
