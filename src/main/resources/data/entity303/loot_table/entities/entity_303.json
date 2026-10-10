@@ -57,6 +57,25 @@
 					]
 				}
 			]
+		},
+		{
+			"rolls": 1,
+			"entries": [
+				{
+					"type": "minecraft:item",
+					"name": "minecraft:netherite_axe",
+					"functions": [
+						{
+							"function": "minecraft:set_components",
+							"components": {
+								"minecraft:item_model": "entity303:reaper_scythe",
+								"minecraft:item_name": { "translate": "item.entity303.reaper_scythe" },
+								"minecraft:rarity": "epic"
+							}
+						}
+					]
+				}
+			]
 		}
 	]
 }

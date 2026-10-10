@@ -240,3 +240,15 @@ reference/                        תמונות ייחוס
   כך שהחזקת SIDE של המכות לא משתנה. `collide.py` ו‑`preview_entity.py` מיישמים אותו דבר, ו‑`autofix.py` הוסיף מפתחות תיקון בטיקים הראשונים של המכות
   (המעבר גלגל↔צד). התוצאה: clean בכל האנימציות חוץ מ‑`leap` (חפיפה של 0.7px בשני טיקים). **לא נבדק במשחק אחרי השינוי.**
   הפיכת הגיאומטריה עצמה (במקום הגלגול) שברה את כל המכות (חפיפה של עד 52px), ולכן לא נעשתה.
+
+* **המגל כשלל + סיבוב מהיר יותר בעמידה (v1.2.4):**
+  * הבוס מפיל "Reaper's Scythe": `netherite_axe` רגיל עם הרכיבים `item_model` = `entity303:reaper_scythe`, שם, ו‑rarity epic
+    (`data/entity303/loot_table/entities/entity_303.json`, פונקציית `minecraft:set_components`). האייקון `textures/item/reaper_scythe.png`
+    נוצר ב‑`tools/gen_assets.py` (`paint_scythe_item`) מקוביות המגל ב‑Blender (64x64, מסובב 45°). זה עדיין גרזן נתריט לכל דבר (נזק/עמידות),
+    אז אפשר בעתיד לרשום פריט אמיתי (`ModItems`) עם תכונות משלו. **לא נבדק במשחק.**
+  * `IDLE_SPIN` ב‑`tools/animations.py` (‑0.14 → ‑0.24 רדיאן לטיק): הסיבוב הרגיל של המגל, גם בתחילת וסוף כל התקפה. `idle_rage` (שלב 3) נשאר ‑0.3.
+    אחרי השינוי `collide.py` מדווח על שאריות קטנות: `hook` (טיק 1, עד 2.4px) ו‑`lunge` (טיק 3, עד 1.0px).
+  * **אייקון המגל נוצר ב‑Blender (v1.2.4):** `blender -b -P blender/render_item_icon.py` בונה מגל עם להב מעוגל ומרנדר ל‑`blender/scythe_item_raw.png`
+    (64x64, Workbench בלי החלקה, מצלמה מסובבת 45°). `tools/gen_assets.py` (`paint_scythe_item`) מוסיף מסגרת כהה וממרכז, וכותב את
+    `textures/item/reaper_scythe.png`; בלי הקובץ הוא נופל חזרה לציור מקוביות המגל. בכף היד הפריט מוגדל (`display` ב‑`models/item/reaper_scythe.json`).
+    Blender 5.2 מותקן ב‑`C:\Program Files\Blender Foundation\Blender 5.2\`.

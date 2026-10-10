@@ -30,6 +30,7 @@ JAVA_OUT = os.path.join(ROOT, "src/client/java/com/entity303/client/render/Entit
 ANIM_OUT = os.path.join(ROOT, "src/main/java/com/entity303/anim/Entity303Animations.java")
 SKIN_IN = os.path.join(ROOT, "skin/entity303_skin.png")
 SCYTHE_SCALE = 0.7          # scythe size relative to the Blender model (1.0 = as modelled)
+ITEM_BLADE_LEFT = False     # the dropped scythe's icon: blade sweeping to the upper left (False = to the lower right)
 NL = chr(10)
 
 
@@ -461,6 +462,58 @@ def paint_egg():
     return img
 
 
+def _scythe_item_from_boxes(size):
+    """Fallback icon (no Blender needed): the Blender boxes seen from the side, turned 45 degrees clockwise."""
+    data = json.load(open(os.path.join(ROOT, "blender/scythe_boxes.json")))
+    cols = {k: rgb(v) for k, v in data["colors"].items()}
+    flip = -1 if ITEM_BLADE_LEFT else 1          # -1: the blade sweeps to the upper left, over the handle
+    boxes = [(min(flip * b["min"][0], flip * b["max"][0]), max(flip * b["min"][0], flip * b["max"][0]),
+              b["min"][2], b["max"][2], cols[b["mat"]]) for b in data["boxes"]]   # later wins
+    xs = [v for b in boxes for v in b[:2]]
+    zs = [v for b in boxes for v in b[2:4]]
+    cx, cz = (min(xs) + max(xs)) / 2, (min(zs) + max(zs)) / 2
+    c = s = math.sqrt(0.5)
+    # how large the drawing is after the 45 degree turn: scale it to fill the canvas (leaving a 2 px margin)
+    corners = [(x - cx, z - cz) for x in (min(xs), max(xs)) for z in (min(zs), max(zs))]
+    reach = max(max(abs(dx * c + dz * s), abs(-dx * s + dz * c)) for dx, dz in corners)
+    k = (size / 2 - 2) / reach                    # output pixels per Blender pixel
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    for py in range(size):
+        for px in range(size):
+            r, u = (px + 0.5 - size / 2) / k, (size / 2 - (py + 0.5)) / k
+            x, z = cx + r * c - u * s, cz + r * s + u * c
+            for x0, x1, z0, z1, col in boxes:
+                if x0 <= x < x1 and z0 <= z < z1:
+                    img.putpixel((px, py), col)
+    return img
+
+
+def paint_scythe_item(size=64):
+    """Icon of the scythe the boss drops (a netherite axe wearing it): the render from blender/render_item_icon.py
+    (blender -b -P blender/render_item_icon.py) when blender/scythe_item_raw.png exists, else a drawing made from
+    the scythe boxes; with a dark outline, centred in the canvas."""
+    raw = os.path.join(ROOT, "blender/scythe_item_raw.png")
+    if os.path.exists(raw):
+        img = Image.open(raw).convert("RGBA")
+        if img.size != (size, size):
+            img = img.resize((size, size), Image.NEAREST)
+        img.putdata([(r, g, b, 255 if a >= 128 else 0) for r, g, b, a in img.getdata()])   # hard edges
+    else:
+        img = _scythe_item_from_boxes(size)
+    out, dark = img.copy(), rgb("#17171c")
+    for py in range(size):
+        for px in range(size):
+            if img.getpixel((px, py))[3] == 0 and any(
+                    0 <= px + dx < size and 0 <= py + dy < size and img.getpixel((px + dx, py + dy))[3]
+                    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+                out.putpixel((px, py), dark)
+    box = out.getbbox()                     # centre the drawing in the canvas
+    cut = out.crop(box)
+    out = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    out.paste(cut, ((size - cut.width) // 2, (size - cut.height) // 2))
+    return out
+
+
 def main():
     spec, colors = build_spec()
     cubes = collect_cubes(spec)
@@ -474,6 +527,7 @@ def main():
     item_dir = os.path.join(ROOT, "src/main/resources/assets", MOD_ID, "textures/item")
     os.makedirs(item_dir, exist_ok=True)
     paint_egg().save(os.path.join(item_dir, "entity_303_spawn_egg.png"))
+    paint_scythe_item().save(os.path.join(item_dir, "reaper_scythe.png"))
     write_java(spec)
     write_animations_java()
     with open(os.path.join(ROOT, "tools/entity303_spec.json"), "w") as fh:
