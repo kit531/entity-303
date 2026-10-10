@@ -277,3 +277,26 @@ reference/                        תמונות ייחוס
   pauses between attacks halved (`PACE`), crowd damage +5% per extra player, no crowd toughness any more. Model result (players
   win): 3 players ~28%, 4 ~44%, 5 ~80%, 6 ~89%, 8 ~97%, fights of 4-6 minutes for 4 players. The model assumes 64 apples per
   player, sharpness V swords and no dodging skill: **playtest it and adjust the two `DAMAGE_TAKEN_*` constants.**
+
+## 12. הקמה במחשב אחר (כל הפרויקט כולל שני המודים נמצא בגיט)
+
+הכול בריפו אחד: `git clone https://github.com/kit531/entity-303.git` ואז התיקייה `ability-keys/` היא המוד הנפרד
+(מקשי היכולות), והשורש הוא מוד Entity 303. ב‑`run/` (עולמות בדיקה, לוגים, חבילת משאבים) אין צורך: הוא מחוץ לגיט בכוונה.
+
+1. **JDK 21** (למשל `C:\Program Files\Java\jdk-21`), ו‑`JAVA_HOME` מצביע אליו. Gradle (9.x) ו‑Loom יורדים לבד בבנייה הראשונה.
+2. **בנייה:** `gradlew.bat build` בונה את שני המודים:
+   * `build/libs/entity-303-<גרסה>.jar` (כולל בתוכו, jar‑in‑jar, את `ability-keys`, כך שעדכון אוטומטי של התקנה ישנה לא שובר אותה)
+   * `ability-keys/build/libs/ability-keys-<גרסה>.jar` (אפשר להתקין גם לבד, למשל עבור מוד אחר)
+3. **הרצה לבדיקה:** `gradlew.bat :runClient` (חשוב: עם `:` כדי לא להפעיל גם את `:ability-keys:runClient`). עולם Survival, 
+   `/loot give @s loot entity303:entities/entity_303`, `/summon entity303:entity_303`.
+4. **נכסים וכלים** (רק אם משנים אותם): Python 3.10+ עם `pip install pillow`; Blender 5.x (`blender -b -P ...`).
+   `python tools/build_assets.py` (אנימציות, מודל, טקסטורות; כ‑2 דקות), `python tools/gen_ui.py` (בוס‑בר, tooltip, אייקוני יכולות),
+   `blender -b -P blender/render_item_icon.py` (אייקון המגל), `python tools/fight_sim.py` / `tools/balance_check.py` (איזון).
+   אם הנתיב ארוך: `ENTITY303_ROOT=C:\dev\entity303`.
+5. **פרסום גרסה:** מעלים `mod_version` (ו‑`ability_keys_version` אם ה‑API השתנה) ב‑`gradle.properties`, commit בשם "X.Y.Z: ...",
+   `git tag -a vX.Y.Z -m ...` ו‑`git push origin main vX.Y.Z`. ה‑Action מפרסם jar + sha256 + את `ability-keys`, והמוד מתעדכן לבד.
+6. **שרת וקליינט:** שני המודים צריכים להיות מותקנים בשרת ובקליינט (או ה‑jar של Entity לבד, שכולל את ה‑Ability Keys).
+   פרופיל Modrinth של המשתמש: `%APPDATA%\ModrinthApp\profiles\Fabric 1.21.11\mods`. השרת בבית: `adam@192.168.1.210`
+   (אובונטו, פורטים 18883-18885 למשחק; צריך להתקין שם מפתח SSH).
+7. **מה לא נבדק במשחק:** כל מה שבסעיפים 11 ו‑12 (יכולות המגל, ה‑HUD, הבוס‑בר החדש, האיזון). הערכים לכיול: `DAMAGE_TAKEN_*`, `BURST_CAP`,
+   `PACE` ב‑`Entity303.java`, ו‑`COOLDOWN_TICKS` ב‑`ScytheAbilities.java`.

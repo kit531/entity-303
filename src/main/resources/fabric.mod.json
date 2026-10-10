@@ -3,7 +3,7 @@
 	"id": "entity303",
 	"version": "${version}",
 	"name": "Entity 303",
-	"description": "Adds Entity 303 as a boss: 1000 HP, a boss bar, a spinning scythe and special attacks.",
+	"description": "Adds Entity 303 as a boss (1500 HP, three phases, a text-less boss bar) and the Reaper's Scythe he drops, with four abilities.",
 	"authors": [
 		"adamk"
 	],

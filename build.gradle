@@ -34,6 +34,9 @@ dependencies {
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 	// the separate key-binding mod: Entity 303 cannot run without it (also declared in fabric.mod.json)
 	implementation project(path: ':ability-keys', configuration: 'namedElements')
+	// also packed inside the Entity 303 jar (jar-in-jar), so the self-updater of an old install brings it along; the same mod can
+	// still be installed on its own (ability-keys-<version>.jar) and is then used instead of the packed copy
+	include project(':ability-keys')
 }
 
 processResources {

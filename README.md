@@ -44,8 +44,9 @@ when an update is waiting). Nothing is replaced while the game is running.
 ## Build
 
 ```
-./gradlew build        # -> build/libs/entity-303-1.0.0.jar     (Java 21)
-./gradlew runClient    # dev client
+./gradlew build        # -> build/libs/entity-303-<version>.jar (contains the Ability Keys mod) and
+                       #    ability-keys/build/libs/ability-keys-<version>.jar     (Java 21)
+./gradlew :runClient   # dev client (the colon matters: ability-keys has its own runClient)
 ```
 
 ## Make it yours
