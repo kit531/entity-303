@@ -82,7 +82,8 @@ public class Entity303Model extends EntityModel<Entity303RenderState> {
 			case 1 -> this.scythePivot.yRot += twirl;
 			default -> this.scythePivot.zRot += twirl;
 		}
-		this.scythe.yRot += state.spinY;
+		// a wheel is rolled half a turn about its handle so the blade is on the side it belongs on
+		this.scythe.yRot += state.spinY + Entity303Animations.WHEEL_FLIP * wheel;
 	}
 
 	private void pose(ModelPart part, int channel) {

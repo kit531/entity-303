@@ -34,6 +34,9 @@ PARTS = ["root", "head", "body", "right_arm", "left_arm", "scythe_pivot", "scyth
 # tools/collide.py and tools/autofix.py do not check the scythe against the ground for these
 NO_GROUND_CHECK = {"spawn", "death"}
 SPIN_AXIS = 1        # which rotation of scythe_pivot the continuous spin is added to: 0 = rx, 1 = ry, 2 = rz
+# degrees the scythe is rolled about its own handle while it is held as a WHEEL (scaled by wheel_weight): puts the
+# blade on the other side of the handle; the SIDE holding of the chops is not touched
+WHEEL_FLIP = 180.0
 CHANNELS = len(PARTS) * 3 + 3          # rotations of every part, then the root offset
 
 

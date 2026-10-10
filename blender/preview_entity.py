@@ -62,7 +62,7 @@ def pose_for(anim_name, t):
     for idx, p in enumerate(A.PARTS):
         out[p] = [math.radians(v) for v in ch[idx * 3:idx * 3 + 3]]
     out["scythe_pivot"][0] += sx
-    out["scythe"][1] += sy
+    out["scythe"][1] += sy + math.radians(A.WHEEL_FLIP) * A.wheel_weight(ch)
     off = ch[len(A.PARTS) * 3:]
     return out, off
 

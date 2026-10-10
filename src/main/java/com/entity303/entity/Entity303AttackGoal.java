@@ -66,7 +66,7 @@ public class Entity303AttackGoal extends Goal {
 	/** Reaper's Descent takes this fraction of the victim's MAXIMUM health, ignoring armor, enchantments, effects and shields. */
 	private static final float DESCENT_FRACTION = 0.5F;
 	/** ...and this fraction in the final phase. */
-	private static final float DESCENT_FRACTION_FINAL = 0.75F;
+	private static final float DESCENT_FRACTION_FINAL = 0.65F;
 	private static final ResourceKey<DamageType> DESCENT_DAMAGE =
 		ResourceKey.create(Registries.DAMAGE_TYPE, Entity303Mod.id("reaper_descent"));
 
@@ -1213,7 +1213,7 @@ public class Entity303AttackGoal extends Goal {
 		this.sound(level, SoundEvents.ENDER_DRAGON_GROWL, 4.0F, 0.7F);
 	}
 
-	/** Half (75% in the final phase) of the victim's maximum health, whatever armor, enchantments, effects or shield they have. */
+	/** Half (65% in the final phase) of the victim's maximum health, whatever armor, enchantments, effects or shield they have. */
 	private void descentHit(ServerLevel level, LivingEntity victim, double nx, double nz) {
 		float fraction = this.boss.getPhase() >= Entity303.FINAL_PHASE ? DESCENT_FRACTION_FINAL : DESCENT_FRACTION;
 		float amount = victim.getMaxHealth() * fraction;

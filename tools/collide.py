@@ -59,7 +59,7 @@ def pose_for(anim_name, t, spin0=0.0, spin_override=None):
     rot = {p: [math.radians(v) for v in ch[i * 3:i * 3 + 3]] for i, p in enumerate(A.PARTS)}
     # the spin is applied exactly like Entity303Model does
     rot["scythe_pivot"][A.SPIN_AXIS] += sx
-    rot["scythe"][1] += sy
+    rot["scythe"][1] += sy + math.radians(A.WHEEL_FLIP) * A.wheel_weight(ch)
     return rot, ch[len(A.PARTS) * 3:]
 
 
@@ -160,7 +160,7 @@ def evaluate(ch, spin=(0.0, 0.0), margin=0.0):
     rot = {p: [math.radians(v) for v in ch[i * 3:i * 3 + 3]] for i, p in enumerate(A.PARTS)}
     w = A.wheel_weight(ch)
     rot["scythe_pivot"][A.SPIN_AXIS] += A.wrap(spin[0]) * w
-    rot["scythe"][1] += spin[1]
+    rot["scythe"][1] += spin[1] + math.radians(A.WHEEL_FLIP) * w
     off = ch[len(A.PARTS) * 3:]
     body = boxes(rot, off, False)
     sc = boxes(rot, off, True)

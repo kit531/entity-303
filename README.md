@@ -9,7 +9,7 @@ Adds **Entity 303** (the white hooded figure with the black face, red eyes and a
 * three phases (66% / 33% HP): faster, harder hitting, more attacks, a roar + shockwave at every phase change
 * special attacks: **Sweep** (overhead chop), **Soul Slash** (beam of soul fire, 3-way fan from phase 2),
   **Shadow Step** (teleports behind you and chops), **Summon** (vexes), **Soul Drain** (slows, blinds and heals him),
-  **Reaper's Descent** (flies up spinning, drags everyone to the floor, crashes down: half of the max health, 75% in the final phase, of whoever is inside the red crash circle - the far players are only dragged to its edge, so it can really be escaped),
+  **Reaper's Descent** (flies up spinning, drags everyone to the floor, crashes down: half of the max health, 65% in the final phase, of whoever is inside the red crash circle - the far players are only dragged to its edge, so it can really be escaped),
   **Reaper's Wrath** (marks the ground under every player, then explodes)
 * more moves: **Crossing Slashes** (two-hit combo), **Reaper's Lunge** (dash + thrust), **Death Leap** (jumps at you and crashes down),
   **Soul Hook** (chain that drags far players to him, followed by a sweep), **Soul Rings** (three stomps, rings of soul fire - jump them),

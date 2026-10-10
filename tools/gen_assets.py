@@ -371,6 +371,8 @@ def write_animations_java():
     L.append(f"	public static final int CHANNELS = {anim_data.CHANNELS};")
     L.append(f"	/** rotation of scythe_pivot (0 = x, 1 = y, 2 = z) that the continuous spin is added to */")
     L.append(f"	public static final int SPIN_AXIS = {anim_data.SPIN_AXIS};")
+    L.append("	/** roll (radians) of the scythe about its own handle while it is held as a wheel; scaled by the wheel weight */")
+    L.append(f"	public static final float WHEEL_FLIP = {math.radians(anim_data.WHEEL_FLIP):.6f}F;")
     L.append("")
     L.append("	public static final int[] DURATION = {" + ", ".join(str(a["duration"]) for _, a in by_id) + "};")
     L.append("	public static final boolean[] LOOP = {" + ", ".join("true" if a["loop"] else "false" for _, a in by_id) + "};")
