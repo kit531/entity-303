@@ -16,9 +16,9 @@ import bpy, math, os
 HERE = os.path.dirname(os.path.abspath(__file__))
 SIZE = 64
 MARGIN = 2                      # px of empty border
-# blade sweeps to the lower right of the icon (True = over the handle to the upper left);
+# blade sweeps over the handle to the upper left of the icon (False = to the lower right, which curls towards the holder in hand);
 # SCYTHE_BLADE=left|right in the environment overrides it for a quick comparison
-BLADE_LEFT = os.environ.get("SCYTHE_BLADE", "right") == "left"
+BLADE_LEFT = os.environ.get("SCYTHE_BLADE", "left") == "left"
 ROLL = 45.0                     # degrees clockwise
 
 COLORS = {

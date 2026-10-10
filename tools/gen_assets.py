@@ -30,7 +30,7 @@ JAVA_OUT = os.path.join(ROOT, "src/client/java/com/entity303/client/render/Entit
 ANIM_OUT = os.path.join(ROOT, "src/main/java/com/entity303/anim/Entity303Animations.java")
 SKIN_IN = os.path.join(ROOT, "skin/entity303_skin.png")
 SCYTHE_SCALE = 0.7          # scythe size relative to the Blender model (1.0 = as modelled)
-ITEM_BLADE_LEFT = False     # the dropped scythe's icon: blade sweeping to the upper left (False = to the lower right)
+ITEM_BLADE_LEFT = True      # the dropped scythe's icon: blade sweeping to the upper left (False = to the lower right)
 NL = chr(10)
 
 
