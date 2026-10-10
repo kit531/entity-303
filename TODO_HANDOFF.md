@@ -252,3 +252,21 @@ reference/                        תמונות ייחוס
     (64x64, Workbench בלי החלקה, מצלמה מסובבת 45°). `tools/gen_assets.py` (`paint_scythe_item`) מוסיף מסגרת כהה וממרכז, וכותב את
     `textures/item/reaper_scythe.png`; בלי הקובץ הוא נופל חזרה לציור מקוביות המגל. בכף היד הפריט מוגדל (`display` ב‑`models/item/reaper_scythe.json`).
     Blender 5.2 מותקן ב‑`C:\Program Files\Blender Foundation\Blender 5.2\`.
+
+## 11. Ability Keys, scythe abilities, 1500 HP, damage budget (v1.3.0)
+
+* **Ability Keys** (`ability-keys/`, mod id `abilitykeys`, own Gradle subproject, `ability_keys_version` in `gradle.properties`):
+  four `KeyMapping`s (G H J K, category "Abilities" in the controls menu) and one C2S packet `abilitykeys:activate(slot)`;
+  `AbilityKeysApi.registerHandler(...)` dispatches it on the server. `entity303` declares `"abilitykeys": ">=1.0.0"` in `depends`
+  and `implementation project(path: ':ability-keys', configuration: 'namedElements')` in `build.gradle`.
+  **Both jars must be installed (client and server).** `release.yml` attaches both jars.
+* **Abilities** (`com.entity303.ability.ScytheAbilities`): slot 1 Soul Laser (30 s), 2 Scythe Hook (60 s; the flying scythe is an
+  `ItemEntity` with noPhysics, the dragged entity is moved with `setPos`/`teleportTo` so it passes through blocks, suffocation is
+  cancelled for it through ALLOW_DAMAGE), 3 Soul Steal (45 s; AFTER_DAMAGE, transient MAX_HEALTH modifiers for 20 s),
+  4 Dash (20 s; black `DustParticleOptions` + 7 damage at the landing). The cooldown of 3 was not specified: 45 s is my choice.
+  HUD: `AbilityHud` + `CooldownSyncPayload`; icons `textures/gui/ability_N.png` from `tools/gen_ui.py`.
+* **Boss:** `MAX_HEALTH` 1500. `Entity303#limitBurst` (called from `Entity303AttackGoal#damage`) caps what one player loses per
+  `BURST_WINDOW_TICKS` = 100 (5 s): `BURST_CAP` 8 / 12 / 16 HP by phase (post armor, enchantments, resistance). Reason in
+  `tools/balance_check.py` (plain golden apples heal 3.3 HP/s; the cap rate in phase 3 is 3.2 HP/s). Entities created before the
+  change keep their old max health: summon a new boss.
+* **Untested in the game after this change.**

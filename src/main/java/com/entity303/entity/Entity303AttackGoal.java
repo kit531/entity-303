@@ -1345,6 +1345,13 @@ public class Entity303AttackGoal extends Goal {
 	 * {@link Entity303#LIFESTEAL_FRACTION} of the health (and absorption) the victim actually lost.
 	 */
 	private boolean damage(ServerLevel level, LivingEntity victim, DamageSource source, float amount) {
+		if (victim instanceof ServerPlayer player) {
+			// a player can only lose so much per burst window, whatever the attack (Entity303#limitBurst)
+			amount = this.boss.limitBurst(level, player, source, amount);
+			if (amount <= 0.0F) {
+				return false;
+			}
+		}
 		float before = victim.getHealth() + victim.getAbsorptionAmount();
 		boolean hurt = victim.hurtServer(level, source, amount);
 		if (hurt && this.boss.getPhase() >= Entity303.FINAL_PHASE) {

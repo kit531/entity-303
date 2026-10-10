@@ -10,6 +10,12 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.damagesource.CombatRules;
+import java.util.UUID;
+import java.util.Map;
+import java.util.HashMap;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -18,6 +24,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -40,7 +47,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Entity 303: a 1000 HP boss with a custom boss bar, three phases and a set of special attacks
+ * Entity 303: a 1500 HP boss with a custom boss bar, three phases and a set of special attacks
  * (see {@link Entity303AttackGoal}). The animation timing lives in tools/animations.py.
  */
 public class Entity303 extends Monster {
@@ -53,7 +60,7 @@ public class Entity303 extends Monster {
 
 	private static final float TWO_PI = (float) (Math.PI * 2.0);
 
-	public static final double MAX_HEALTH = 1000.0;
+	public static final double MAX_HEALTH = 1500.0;
 	/** Every damage number of the attacks is multiplied by this (on top of the +25% / +50% of phases 2 and 3). */
 	public static final float DAMAGE_SCALE = 2.0F;
 	/** Twice the armor of the first version (8). */
@@ -394,6 +401,79 @@ public class Entity303 extends Monster {
 				this.remove(Entity.RemovalReason.KILLED);
 			}
 		}
+	}
+
+
+	// ------------------------------------------------- damage budget per player ---
+	/**
+	 * The most HP a single player can lose to him (after armor, enchantments and resistance) within one burst window, by
+	 * phase. Sized so that a player in full diamond armor with Protection III who eats golden apples without a pause
+	 * out-heals it: 8 hearts at most in his final form, then no more damage to that player until the window is over.
+	 * See tools/balance_check.py for the numbers behind it.
+	 */
+	public static final float[] BURST_CAP = {8.0F, 12.0F, 16.0F};
+	/** Length of the window (5 s; at least three were asked for, the rate has to stay below what golden apples heal). */
+	public static final int BURST_WINDOW_TICKS = 100;
+
+	private static final class Burst {
+		int start = Integer.MIN_VALUE;
+		float spent;
+	}
+
+	private final Map<UUID, Burst> bursts = new HashMap<>();
+
+	/**
+	 * @return the damage he may actually deal: {@code amount} when the budget of this window allows it, a smaller number
+	 * when only part of it fits, 0 once the player has already taken the cap (that attack does nothing to him)
+	 */
+	public float limitBurst(ServerLevel level, ServerPlayer player, DamageSource source, float amount) {
+		float cap = BURST_CAP[Mth.clamp(this.getPhase(), 1, BURST_CAP.length) - 1];
+		Burst burst = this.bursts.computeIfAbsent(player.getUUID(), id -> new Burst());
+		if (burst.start == Integer.MIN_VALUE || this.tickCount - burst.start >= BURST_WINDOW_TICKS) {
+			burst.start = this.tickCount;
+			burst.spent = 0.0F;
+		}
+		float room = cap - burst.spent;
+		if (room < 0.5F) {
+			return 0.0F;
+		}
+		float effective = effectiveDamage(level, player, source, amount);
+		if (effective <= room) {
+			burst.spent += effective;
+			return amount;
+		}
+		float low = 0.0F;
+		float high = amount;
+		for (int i = 0; i < 14; i++) {
+			float mid = (low + high) * 0.5F;
+			if (effectiveDamage(level, player, source, mid) > room) {
+				high = mid;
+			} else {
+				low = mid;
+			}
+		}
+		burst.spent = cap;
+		return low;
+	}
+
+	/** What {@code amount} of damage costs the player after armor, enchantments and the resistance effect. */
+	private static float effectiveDamage(ServerLevel level, LivingEntity victim, DamageSource source, float amount) {
+		float damage = amount;
+		if (!source.is(DamageTypeTags.BYPASSES_ARMOR)) {
+			damage = CombatRules.getDamageAfterAbsorb(victim, damage, source, (float) victim.getArmorValue(),
+				(float) victim.getAttributeValue(Attributes.ARMOR_TOUGHNESS));
+		}
+		if (!source.is(DamageTypeTags.BYPASSES_EFFECTS) && victim.hasEffect(MobEffects.RESISTANCE)) {
+			int levels = victim.getEffect(MobEffects.RESISTANCE).getAmplifier() + 1;
+			damage = Math.max(damage * (25 - levels * 5) / 25.0F, 0.0F);
+		}
+		if (damage > 0.0F && !source.is(DamageTypeTags.BYPASSES_ENCHANTMENTS)) {
+			float protection = EnchantmentHelper.getDamageProtection(level, victim, source);
+			if (protection > 0.0F) {
+				damage = CombatRules.getDamageAfterMagicAbsorb(damage, protection);
+			}
+		}
+		return damage;
 	}
 
 	// ------------------------------------------------------------ boss bar ---

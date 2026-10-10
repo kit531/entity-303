@@ -4,7 +4,7 @@
 
 Adds **Entity 303** (the white hooded figure with the black face, red eyes and a scythe) as a boss.
 
-* 1000 HP (built for a fight with ~5 players), double damage, boss bar with 20 notches that changes colour/title per phase (white -> purple "ENRAGED" -> flashing red "FINAL FORM")
+* 1500 HP (built for a fight with ~5 players), double damage, boss bar with 20 notches that changes colour/title per phase (white -> purple "ENRAGED" -> flashing red "FINAL FORM")
 * the scythe is twirled in his hand all the time (modelled in Blender, see `blender/`)
 * three phases (66% / 33% HP): faster, harder hitting, more attacks, a roar + shockwave at every phase change
 * special attacks: **Sweep** (overhead chop), **Soul Slash** (beam of soul fire, 3-way fan from phase 2),
@@ -66,3 +66,26 @@ Windows note: the project path must be short (Windows 260-character limit for so
 set `ENTITY303_ROOT` to a short path (a junction works) before running the Python/Blender scripts.
 * he switches between players: every 5-10 seconds he picks a random one (at once when his target is farther than 24 blocks while somebody is close, or farther than 40);
   cobwebs, berry bushes and powder snow do not slow him; life steal and Soul Drain heal at most 8 HP/s on average (30 HP burst)
+
+## Reaper's Scythe abilities (needs the **Ability Keys** mod)
+
+The scythe the boss drops has four abilities on **G, H, J, K** (change them under *Options > Controls > Key Binds >
+Abilities*). The keys live in the separate mod in `ability-keys/` (`ability-keys-<version>.jar`); Entity 303 does not start
+without it. The Ability Keys mod only reports "ability N was pressed" to the server; every move, animation and cooldown is in
+Entity 303.
+
+| Key | Ability | Cooldown |
+|-----|---------|----------|
+| G | **Soul Laser** - a beam of soul fire, the same hit as the boss's first phase Soul Slash (22 damage + Wither) | 30 s |
+| H | **Scythe Hook** - throw the scythe 20 blocks, through blocks; it hooks the first mob/player it touches and drags it to you through blocks (1 heart every 1.5 s, released next to you) | 60 s |
+| J | **Soul Steal** - your next hit takes 2 hearts of max health from the target and gives them to you for 20 s | 45 s |
+| K | **Dash** - a leap that ends in a burst of black dust, 7 damage around the landing point | 20 s |
+
+The four cooldowns are drawn above the health and hunger bars while the scythe is held (an icon per ability, the key above
+it, READY when it can be used).
+
+## Fairness of the boss
+
+One player can only lose a limited amount per window (after armor and enchantments): 4 / 6 / 8 hearts in phase 1 / 2 / 3 per
+5 seconds, so somebody in full diamond with Protection III who eats golden apples without a pause cannot be killed. See
+`tools/balance_check.py` for the maths.

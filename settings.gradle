@@ -10,3 +10,4 @@ pluginManagement {
 }
 
 rootProject.name = 'entity-303'
+include 'ability-keys'

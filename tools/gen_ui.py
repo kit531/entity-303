@@ -170,6 +170,130 @@ def build_gloss():
     return img
 
 
+
+# --------------------------------------------------------------------- ability icons ---
+def thick_line(img, p0, p1, colors):
+    """colors = [outer, ..., core]: concentric 1px bands around the line."""
+    x0, y0 = p0
+    x1, y1 = p1
+    steps = int(max(abs(x1 - x0), abs(y1 - y0)) * 3) + 1
+    for band, col in enumerate(colors):
+        r = len(colors) - 1 - band
+        for i in range(steps + 1):
+            t = i / steps
+            x, y = x0 + (x1 - x0) * t, y0 + (y1 - y0) * t
+            for dx in range(-r, r + 1):
+                for dy in range(-r, r + 1):
+                    if dx * dx + dy * dy <= r * r + 1:
+                        px, py = int(round(x)) + dx, int(round(y)) + dy
+                        if 0 <= px < 16 and 0 <= py < 16:
+                            img.putpixel((px, py), col)
+
+
+def paint_template(img, rows, legend, ox=0, oy=0):
+    for dy, row in enumerate(rows):
+        for dx, ch in enumerate(row):
+            if ch != "." and ch in legend:
+                img.putpixel((ox + dx, oy + dy), legend[ch])
+
+
+def outline16(img, col=None):
+    col = col or OUT
+    out = img.copy()
+    for y in range(16):
+        for x in range(16):
+            if img.getpixel((x, y))[3] == 0:
+                for ox, oy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    nx, ny = x + ox, y + oy
+                    if 0 <= nx < 16 and 0 <= ny < 16 and img.getpixel((nx, ny))[3]:
+                        out.putpixel((x, y), col)
+                        break
+    return out
+
+
+def icon_laser():
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    thick_line(img, (3, 12), (14, 2), [c("#0aa6c4"), c("#3df0ff"), c("#eaffff")])
+    paint_template(img, [".c.", "cCc", ".c."], {"c": c("#3df0ff"), "C": c("#eaffff")}, 1, 12)      # the flame the beam leaves
+    for x, y in ((13, 6), (9, 3), (15, 4), (6, 9)):
+        img.putpixel((x, y), c("#9bf6ff"))
+    return outline16(img)
+
+
+def icon_hook():
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    for i, (x, y) in enumerate([(1, 14), (3, 12), (5, 10), (7, 8)]):                                 # the chain
+        col = c("#9a9da8") if i % 2 == 0 else c("#565866")
+        img.putpixel((x, y), col)
+        img.putpixel((x + 1, y), col)
+        img.putpixel((x, y - 1), col)
+    blade = [
+        "...ssss...",
+        "..sEEEEs..",
+        ".sEsssssd.",
+        ".sEs...sdd",
+        "sEs.....sd",
+        "sE.......t",
+        "ss.......t",
+    ]
+    paint_template(img, blade, {"s": c("#6a6c78"), "E": c("#e4e6ec"), "d": c("#3a3b45"), "t": c("#c02a30")}, 6, 1)
+    return outline16(img)
+
+
+def icon_steal():
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    ghost = [
+        "..www..",
+        ".wwwww.",
+        "wwkwwkw",
+        "wwkwwkw",
+        "wwwwwww",
+        "wwwwwww",
+        "w.ww.ww",
+    ]
+    paint_template(img, ghost, {"w": c("#d6f4ff"), "k": c("#10202a")}, 0, 1)
+    heart = [
+        ".hh.hh.",
+        "hRRhRRh",
+        "hRRRRRh",
+        ".hRRRh.",
+        "..hRh..",
+        "...h...",
+    ]
+    paint_template(img, heart, {"h": c("#8c1a20"), "R": c("#ff3a46")}, 8, 8)
+    img.putpixel((9, 10), c("#ffb0b0"))
+    for x, y in ((8, 6), (9, 7), (10, 7)):                                                          # the soul being drawn off
+        img.putpixel((x, y), c("#7ff0ff"))
+    return outline16(img)
+
+
+def icon_dash():
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    streaks = {4: (1, 9), 7: (0, 11), 10: (2, 9)}
+    for y, (a, b) in streaks.items():
+        for x in range(a, b + 1):
+            img.putpixel((x, y), c("#2a1230") if (x + y) % 2 else c("#4a2058"))
+    for x in range(3, 9):
+        img.putpixel((x, 8), c("#7a3a90"))
+    arrow = [
+        "..dd....",
+        "...dd...",
+        "....dd..",
+        ".....dd.",
+        "....dd..",
+        "...dd...",
+        "..dd....",
+    ]
+    paint_template(img, arrow, {"d": c("#15060a")}, 8, 4)
+    for dy, row in enumerate(arrow):
+        for dx, ch in enumerate(row):
+            if ch == "d" and dx in (4, 5):
+                img.putpixel((8 + dx, 4 + dy), c("#c02a30"))
+    for x, y in ((0, 12), (2, 13), (5, 13), (1, 14)):                                               # dust
+        img.putpixel((x, y), c("#15060a"))
+    return outline16(img, c("#05020a"))
+
+
 def build_tooltip():
     bg = Image.new("RGBA", (100, 100), c("#12040a", 244))
     d = ImageDraw.Draw(bg)
@@ -213,6 +337,8 @@ def main():
     for i, f in enumerate(fills, 1):
         f.save(os.path.join(GUI, f"boss_bar_fill_{i}.png"))
     gloss.save(os.path.join(GUI, "boss_bar_gloss.png"))
+    for i, make in enumerate((icon_laser, icon_hook, icon_steal, icon_dash), 1):
+        make().save(os.path.join(GUI, f"ability_{i}.png"))
     bg, fr = build_tooltip()
     bg.save(os.path.join(SPRITES, "reaper_background.png"))
     fr.save(os.path.join(SPRITES, "reaper_frame.png"))
@@ -238,6 +364,11 @@ def main():
     tip.alpha_composite(bg.resize((200, 100), Image.NEAREST), (10, 10))
     tip.alpha_composite(fr.resize((200, 100), Image.NEAREST), (10, 10))
     tip.resize((660, 360), Image.NEAREST).save(os.path.join(ROOT, "preview/tooltip_preview.png"))
+    icons_sheet = Image.new("RGBA", (4 * 16 * 8 + 5 * 16, 16 * 8 + 32), c("#2a2d3a"))
+    for i in range(4):
+        ic = Image.open(os.path.join(GUI, f"ability_{i + 1}.png")).convert("RGBA")
+        icons_sheet.alpha_composite(ic.resize((128, 128), Image.NEAREST), (16 + i * (128 + 16), 16))
+    icons_sheet.save(os.path.join(ROOT, "preview/ability_icons_preview.png"))
     print("ui art written")
 
 

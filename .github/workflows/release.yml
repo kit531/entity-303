@@ -36,7 +36,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          AK_VERSION=$(grep '^ability_keys_version=' gradle.properties | cut -d= -f2 | tr -d '\r')
           gh release create "$GITHUB_REF_NAME" \
             "build/libs/entity-303-${VERSION}.jar" \
             "build/libs/entity-303-${VERSION}.jar.sha256" \
+            "ability-keys/build/libs/ability-keys-${AK_VERSION}.jar" \
             --title "Entity 303 ${VERSION}" --generate-notes

@@ -1,0 +1,26 @@
+{
+	"schemaVersion": 1,
+	"id": "abilitykeys",
+	"version": "${version}",
+	"name": "Ability Keys",
+	"description": "Four rebindable ability keys (G, H, J, K by default). Other mods register what each key does.",
+	"authors": [
+		"adamk"
+	],
+	"license": "CC0-1.0",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.abilitykeys.AbilityKeys"
+		],
+		"client": [
+			"com.abilitykeys.client.AbilityKeysClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.18.0",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}

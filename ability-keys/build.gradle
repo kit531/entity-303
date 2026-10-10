@@ -1,45 +1,32 @@
 plugins {
 	id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
-	id 'maven-publish'
 }
 
 base {
-	archivesName = project.archives_base_name
+	archivesName = 'ability-keys'
 }
 
-version = project.mod_version
-
-evaluationDependsOn(':ability-keys')
-group = project.maven_group
+version = project.ability_keys_version
+group = 'com.abilitykeys'
 
 loom {
-	splitEnvironmentSourceSets()
-
 	mods {
-		"entity303" {
-			sourceSet sourceSets.main
-			sourceSet sourceSets.client
-		}
 		"abilitykeys" {
-			sourceSet project(':ability-keys').sourceSets.main
+			sourceSet sourceSets.main
 		}
 	}
 }
 
 dependencies {
-	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	mappings loom.officialMojangMappings()
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-	// the separate key-binding mod: Entity 303 cannot run without it (also declared in fabric.mod.json)
-	implementation project(path: ':ability-keys', configuration: 'namedElements')
 }
 
 processResources {
 	def version = project.version
 	inputs.property "version", version
-
 	filesMatching("fabric.mod.json") {
 		expand "version": version
 	}
@@ -51,7 +38,6 @@ tasks.withType(JavaCompile).configureEach {
 
 java {
 	withSourcesJar()
-
 	sourceCompatibility = JavaVersion.VERSION_21
 	targetCompatibility = JavaVersion.VERSION_21
 }
