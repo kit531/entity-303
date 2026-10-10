@@ -18,7 +18,7 @@ Adds **Entity 303** (the white hooded figure with the black face, red eyes and a
 * extras: climbs out of the ground when summoned, a death animation (falls on his back), a taunt, a restless "rage" idle in the final phase,
   legs in the animations (crouch, lunge, leap)
 * **final form (phase 3):** immune to every effect (good or bad, potions included), all his attacks hit 1.5x harder, and he heals for 50% of the health he takes from players
-* **fights harder against a crowd (all phases):** every extra survival player within 40 blocks (up to 8) makes his attacks hit 10% harder and lets him take 6% less damage (never more than 24% less, so no crowd makes him invincible); alone he has no bonus
+* **built for 4-5 geared players:** he shrugs off most of the damage (he takes 22% of it from up to 4 players, 40% from 5 or more) and attacks twice as often, but one player can only lose 4 / 6 / 8 hearts (phase 1 / 2 / 3) per 3 seconds, so somebody in full diamond with Protection III who keeps eating golden apples cannot be killed. Four such players have a coin-flip fight, five win clearly (see `tools/fight_sim.py`); every extra player makes his attacks hit 5% harder
 * he counts the players around him: more beams, drains and minions, shorter pauses (work in progress, see TODO_HANDOFF.md)
 * drops: 2 nether stars, 16-32 diamonds, 4-8 netherite scrap, a totem of undying, 1-3 enchanted golden apples, the **Reaper's Scythe** (a netherite axe with the scythe's own texture and name), 500 XP
 
@@ -87,5 +87,5 @@ it, READY when it can be used).
 ## Fairness of the boss
 
 One player can only lose a limited amount per window (after armor and enchantments): 4 / 6 / 8 hearts in phase 1 / 2 / 3 per
-5 seconds, so somebody in full diamond with Protection III who eats golden apples without a pause cannot be killed. See
+3 seconds, so somebody in full diamond with Protection III who eats golden apples without a pause cannot be killed. See
 `tools/balance_check.py` for the maths.

@@ -266,7 +266,14 @@ reference/                        תמונות ייחוס
   4 Dash (20 s; black `DustParticleOptions` + 7 damage at the landing). The cooldown of 3 was not specified: 45 s is my choice.
   HUD: `AbilityHud` + `CooldownSyncPayload`; icons `textures/gui/ability_N.png` from `tools/gen_ui.py`.
 * **Boss:** `MAX_HEALTH` 1500. `Entity303#limitBurst` (called from `Entity303AttackGoal#damage`) caps what one player loses per
-  `BURST_WINDOW_TICKS` = 100 (5 s): `BURST_CAP` 8 / 12 / 16 HP by phase (post armor, enchantments, resistance). Reason in
-  `tools/balance_check.py` (plain golden apples heal 3.3 HP/s; the cap rate in phase 3 is 3.2 HP/s). Entities created before the
+  `BURST_WINDOW_TICKS` = 60 (3 s): `BURST_CAP` 8 / 12 / 16 HP by phase (post armor, enchantments, resistance). Reason in
+  `tools/balance_check.py` (a non-stop eater heals ~5.3 HP/s with natural regeneration; the cap rate in phase 3 is 5.3 HP/s). Entities created before the
   change keep their old max health: summon a new boss.
 * **Untested in the game after this change.**
+
+* **Balance for 4-5 geared players (fitted with `tools/fight_sim.py`, a Monte-Carlo model of the fight; run it with `python
+  tools/fight_sim.py 3 4 5 6 8`):** with the damage budget a player who keeps eating cannot die, so the boss is made hard by
+  what he takes: `DAMAGE_TAKEN_SMALL_GROUP` 0.22 (up to 4 players), `DAMAGE_TAKEN_BIG_GROUP` 0.40 (5 or more, so five win clearly),
+  pauses between attacks halved (`PACE`), crowd damage +5% per extra player, no crowd toughness any more. Model result (players
+  win): 3 players ~28%, 4 ~44%, 5 ~80%, 6 ~89%, 8 ~97%, fights of 4-6 minutes for 4 players. The model assumes 64 apples per
+  player, sharpness V swords and no dodging skill: **playtest it and adjust the two `DAMAGE_TAKEN_*` constants.**

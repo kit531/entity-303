@@ -73,10 +73,16 @@ public class Entity303 extends Monster {
 	/** In the final phase every one of his attacks hits this many times harder (was 2.0, lowered a little). */
 	public static final float FINAL_DAMAGE_BONUS = 1.5F;
 	/** Every player beyond the first one near him (up to CROWD_CAP players) makes his attacks hit this much harder... */
-	public static final float CROWD_DAMAGE_PER_PLAYER = 0.10F;
-	/** ...and makes him take this much less damage, but never more than CROWD_TOUGHNESS_MAX (no crowd makes him unkillable). */
-	public static final float CROWD_TOUGHNESS_PER_PLAYER = 0.06F;
-	public static final float CROWD_TOUGHNESS_MAX = 0.24F;
+	public static final float CROWD_DAMAGE_PER_PLAYER = 0.05F;
+	/**
+	 * Share of the damage of the players that actually reaches him (the rest is his own toughness). Fitted with
+	 * tools/fight_sim.py so that 4 fully geared players (diamond, Protection III, golden apples) have a coin-flip fight
+	 * and 5 or more win clearly; with the per-player damage budget (BURST_CAP) he cannot kill somebody who keeps eating,
+	 * so his toughness is what makes the fight hard.
+	 */
+	public static final float DAMAGE_TAKEN_SMALL_GROUP = 0.22F;   // up to 4 players
+	public static final float DAMAGE_TAKEN_BIG_GROUP = 0.40F;     // 5 or more players
+	public static final int BIG_GROUP = 5;
 	public static final int CROWD_CAP = 8;
 	/** Health he can steal back (life steal, Soul Drain): at most this much per tick on average, saved up to a maximum. */
 	public static final float HEAL_PER_TICK = 0.4F;
@@ -259,11 +265,14 @@ public class Entity303 extends Monster {
 	}
 
 	/** How much the pauses between attacks shrink in the current phase. */
+	/** The pauses between his attacks are halved (fitted with tools/fight_sim.py together with the damage he takes). */
+	private static final float PACE = 0.5F;
+
 	float cooldownScale() {
 		return switch (this.getPhase()) {
-			case 3 -> 0.55F;
-			case 2 -> 0.75F;
-			default -> 1.0F;
+			case 3 -> 0.55F * PACE;
+			case 2 -> 0.75F * PACE;
+			default -> PACE;
 		};
 	}
 
@@ -371,7 +380,7 @@ public class Entity303 extends Monster {
 		}
 		if (!source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
 			// tougher against a crowd, with a ceiling so that no number of players makes him invincible
-			amount /= 1.0F + Math.min(CROWD_TOUGHNESS_MAX, CROWD_TOUGHNESS_PER_PLAYER * this.extraPlayers());
+			amount *= this.extraPlayers() + 1 >= BIG_GROUP ? DAMAGE_TAKEN_BIG_GROUP : DAMAGE_TAKEN_SMALL_GROUP;
 		}
 		if (this.isGuarding() && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
 			amount *= GUARD_DAMAGE_FACTOR;
@@ -412,8 +421,8 @@ public class Entity303 extends Monster {
 	 * See tools/balance_check.py for the numbers behind it.
 	 */
 	public static final float[] BURST_CAP = {8.0F, 12.0F, 16.0F};
-	/** Length of the window (5 s; at least three were asked for, the rate has to stay below what golden apples heal). */
-	public static final int BURST_WINDOW_TICKS = 100;
+	/** Length of the window: 3 s, "at least three seconds" without being attacked again (longer makes him far too weak, see fight_sim.py). */
+	public static final int BURST_WINDOW_TICKS = 60;
 
 	private static final class Burst {
 		int start = Integer.MIN_VALUE;

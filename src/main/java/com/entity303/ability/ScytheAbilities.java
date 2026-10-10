@@ -36,7 +36,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
@@ -76,11 +75,11 @@ public final class ScytheAbilities {
 	private static final Identifier STEAL_VICTIM = Entity303Mod.id("soul_steal_victim");
 	private static final Identifier STEAL_GAIN = Entity303Mod.id("soul_steal_gain");
 	// Dash
-	private static final double DASH_SPEED = 1.7;
-	private static final double DASH_LIFT = 0.42;
-	private static final double DASH_RADIUS = 3.6;
+	private static final double DASH_SPEED = 2.5;
+	private static final double DASH_LIFT = 0.5;
+	private static final double DASH_RADIUS = 5.5;
 	private static final float DASH_DAMAGE = 7.0F;
-	private static final DustParticleOptions BLACK = new DustParticleOptions(0x000000, 1.8F);
+	private static final DustParticleOptions BLACK = new DustParticleOptions(0x000000, 2.6F);
 
 	private static final Identifier SCYTHE_MODEL = Entity303Mod.id("reaper_scythe");
 
@@ -102,7 +101,6 @@ public final class ScytheAbilities {
 	private static final class Hook {
 		final ServerPlayer owner;
 		final ServerLevel level;
-		final ItemEntity visual;
 		final Vec3 dir;
 		Vec3 pos;
 		double travelled;
@@ -111,10 +109,9 @@ public final class ScytheAbilities {
 		int age;
 		int sinceDamage;
 
-		Hook(ServerPlayer owner, ServerLevel level, ItemEntity visual, Vec3 pos, Vec3 dir) {
+		Hook(ServerPlayer owner, ServerLevel level, Vec3 pos, Vec3 dir) {
 			this.owner = owner;
 			this.level = level;
-			this.visual = visual;
 			this.pos = pos;
 			this.dir = dir;
 		}
@@ -140,7 +137,7 @@ public final class ScytheAbilities {
 		ServerTickEvents.END_SERVER_TICK.register(ScytheAbilities::tick);
 		ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
 			STATES.clear();
-			HOOKS.forEach(h -> h.visual.discard());
+			HOOKS.forEach(ScytheAbilities::endHook);
 			HOOKS.clear();
 			DASHES.clear();
 			EXPIRIES.clear();
@@ -259,36 +256,48 @@ public final class ScytheAbilities {
 	private static boolean throwScythe(ServerLevel level, ServerPlayer player) {
 		Vec3 dir = player.getLookAngle();
 		Vec3 start = player.getEyePosition().add(dir.scale(0.8));
-		ItemStack shown = player.getMainHandItem().copyWithCount(1);
-		ItemEntity visual = new ItemEntity(level, start.x, start.y, start.z, shown);
-		visual.setNoGravity(true);
-		visual.setNeverPickUp();
-		visual.setUnlimitedLifetime();
-		visual.setInvulnerable(true);
-		visual.noPhysics = true;
-		visual.setDeltaMovement(Vec3.ZERO);
-		level.addFreshEntity(visual);
-		HOOKS.add(new Hook(player, level, visual, start, dir));
+		HOOKS.add(new Hook(player, level, start, dir));
 		player.swing(InteractionHand.MAIN_HAND, true);
-		level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.TRIDENT_THROW.value(), SoundSource.PLAYERS, 1.2F, 0.6F);
+		level.sendParticles(ParticleTypes.SCULK_SOUL, start.x, start.y, start.z, 12, 0.2, 0.2, 0.2, 0.05);
+		level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.SOUL_ESCAPE.value(), SoundSource.PLAYERS, 1.4F, 0.6F);
 		return true;
+	}
+
+	/** A waving thread of souls from {@code from} to {@code to}. */
+	private static void soulThread(ServerLevel level, Vec3 from, Vec3 to) {
+		Vec3 delta = to.subtract(from);
+		double length = delta.length();
+		if (length < 0.4) {
+			return;
+		}
+		Vec3 step = delta.scale(0.4 / length);
+		int points = (int) (length / 0.4);
+		long time = level.getGameTime();
+		Vec3 p = from;
+		for (int i = 0; i <= points; i++) {
+			double wave = Math.sin(i * 0.8 + time * 0.6) * 0.14;
+			level.sendParticles(ParticleTypes.SOUL, p.x, p.y + wave, p.z, 1, 0.02, 0.02, 0.02, 0.0);
+			if (i % 3 == 0) {
+				level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, p.x, p.y + wave, p.z, 1, 0.0, 0.0, 0.0, 0.0);
+			}
+			p = p.add(step);
+		}
 	}
 
 	/** @return true when the hook is finished and should be forgotten */
 	private static boolean tickHook(Hook h) {
 		ServerPlayer owner = h.owner;
 		h.age++;
-		if (!owner.isAlive() || owner.isRemoved() || owner.level() != h.level || h.visual.isRemoved() || h.age > HOOK_TIMEOUT) {
+		if (!owner.isAlive() || owner.isRemoved() || owner.level() != h.level || h.age > HOOK_TIMEOUT) {
 			endHook(h);
 			return true;
 		}
 		if (h.target == null) {
 			h.pos = h.pos.add(h.dir.scale(HOOK_SPEED));
 			h.travelled += HOOK_SPEED;
-			h.visual.setPos(h.pos.x, h.pos.y - 0.25, h.pos.z);
-			h.visual.setDeltaMovement(Vec3.ZERO);
-			h.level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, h.pos.x, h.pos.y, h.pos.z, 1, 0.08, 0.08, 0.08, 0.0);
-			h.level.sendParticles(ParticleTypes.SQUID_INK, h.pos.x, h.pos.y, h.pos.z, 1, 0.1, 0.1, 0.1, 0.0);
+			soulThread(h.level, owner.getEyePosition().add(0.0, -0.45, 0.0), h.pos);
+			h.level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, h.pos.x, h.pos.y, h.pos.z, 4, 0.15, 0.15, 0.15, 0.02);
+			h.level.sendParticles(ParticleTypes.SCULK_SOUL, h.pos.x, h.pos.y, h.pos.z, 2, 0.15, 0.15, 0.15, 0.02);
 
 			LivingEntity best = null;
 			double bestDistance = Double.MAX_VALUE;
@@ -332,9 +341,9 @@ public final class ScytheAbilities {
 		} else {
 			t.setPos(next);
 		}
-		h.visual.setPos(next.x, next.y + t.getBbHeight() * 0.5, next.z);
-		h.visual.setDeltaMovement(Vec3.ZERO);
-		h.level.sendParticles(ParticleTypes.SOUL, next.x, next.y + t.getBbHeight() * 0.5, next.z, 1, 0.2, 0.3, 0.2, 0.01);
+		Vec3 hold = new Vec3(next.x, next.y + t.getBbHeight() * 0.5, next.z);
+		soulThread(h.level, owner.getEyePosition().add(0.0, -0.45, 0.0), hold);
+		h.level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, hold.x, hold.y, hold.z, 5, 0.25, 0.35, 0.25, 0.03);
 		if (++h.sinceDamage >= HOOK_DAMAGE_INTERVAL) {
 			h.sinceDamage = 0;
 			t.hurtServer(h.level, h.level.damageSources().playerAttack(owner), HOOK_DAMAGE);
@@ -347,8 +356,8 @@ public final class ScytheAbilities {
 			h.target.noPhysics = h.targetNoPhysics;
 			BEING_PULLED.remove(h.target.getUUID());
 		}
-		h.visual.discard();
-		h.level.playSound(null, h.pos.x, h.pos.y, h.pos.z, SoundEvents.CHAIN_BREAK, SoundSource.PLAYERS, 1.0F, 0.9F);
+		h.level.sendParticles(ParticleTypes.SCULK_SOUL, h.pos.x, h.pos.y, h.pos.z, 10, 0.3, 0.3, 0.3, 0.06);
+		h.level.playSound(null, h.pos.x, h.pos.y, h.pos.z, SoundEvents.SOUL_ESCAPE.value(), SoundSource.PLAYERS, 1.0F, 1.2F);
 	}
 
 	// ------------------------------------------------------------ 3: soul steal --
@@ -398,7 +407,7 @@ public final class ScytheAbilities {
 		player.fallDistance = 0.0;
 		DASHES.add(new Dash(player));
 		player.swing(InteractionHand.MAIN_HAND, true);
-		level.sendParticles(BLACK, player.getX(), player.getY() + 0.2, player.getZ(), 25, 0.4, 0.1, 0.4, 0.02);
+		level.sendParticles(BLACK, player.getX(), player.getY() + 0.2, player.getZ(), 60, 0.7, 0.15, 0.7, 0.03);
 		level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENDER_DRAGON_FLAP, SoundSource.PLAYERS, 1.0F, 1.4F);
 		return true;
 	}
@@ -412,7 +421,7 @@ public final class ScytheAbilities {
 		}
 		ServerLevel level = p.level();
 		p.fallDistance = 0.0;
-		level.sendParticles(BLACK, p.getX(), p.getY() + 0.5, p.getZ(), 4, 0.25, 0.3, 0.25, 0.0);
+		level.sendParticles(BLACK, p.getX(), p.getY() + 0.5, p.getZ(), 10, 0.4, 0.45, 0.4, 0.0);
 		if (!((d.age >= 5 && p.onGround()) || d.age > 50)) {
 			return false;
 		}
@@ -420,11 +429,17 @@ public final class ScytheAbilities {
 		double x = p.getX();
 		double y = p.getY();
 		double z = p.getZ();
-		level.sendParticles(BLACK, x, y + 0.15, z, 140, 1.8, 0.15, 1.8, 0.03);
-		level.sendParticles(ParticleTypes.LARGE_SMOKE, x, y + 0.3, z, 30, 1.4, 0.2, 1.4, 0.02);
-		for (int i = 0; i < 36; i++) {
-			double a = i * Math.PI * 2.0 / 36.0;
-			level.sendParticles(BLACK, x + Math.cos(a) * DASH_RADIUS, y + 0.1, z + Math.sin(a) * DASH_RADIUS, 1, 0.0, 0.05, 0.0, 0.0);
+		level.sendParticles(BLACK, x, y + 0.2, z, 320, 3.2, 0.25, 3.2, 0.04);
+		level.sendParticles(BLACK, x, y + 1.2, z, 120, 0.9, 1.6, 0.9, 0.05);      // a column in the middle
+		level.sendParticles(ParticleTypes.LARGE_SMOKE, x, y + 0.4, z, 70, 2.6, 0.3, 2.6, 0.03);
+		level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, x, y + 0.3, z, 40, 2.4, 0.2, 2.4, 0.02);
+		for (int ring = 1; ring <= 3; ring++) {                                   // three shock rings
+			double radius = DASH_RADIUS * ring / 3.0;
+			int points = 24 + ring * 12;
+			for (int i = 0; i < points; i++) {
+				double a = i * Math.PI * 2.0 / points;
+				level.sendParticles(BLACK, x + Math.cos(a) * radius, y + 0.1, z + Math.sin(a) * radius, 1, 0.0, 0.05, 0.0, 0.0);
+			}
 		}
 		DamageSource source = level.damageSources().playerAttack(p);
 		for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(DASH_RADIUS, 1.5, DASH_RADIUS),
@@ -436,7 +451,7 @@ public final class ScytheAbilities {
 				victim.hurtMarked = true;
 			}
 		}
-		level.playSound(null, x, y, z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 0.9F, 0.7F);
+		level.playSound(null, x, y, z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 1.4F, 0.55F);
 		return true;
 	}
 
