@@ -2,9 +2,7 @@ package com.entity303.entity;
 
 import com.entity303.anim.Entity303Animations;
 import java.util.List;
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -84,7 +82,7 @@ public class Entity303 extends Monster {
 	public static final int DEATH_TICKS = Entity303Animations.duration(Entity303Animations.DEATH) + 10;
 
 	private final ServerBossEvent bossEvent = (ServerBossEvent) new ServerBossEvent(
-		Component.literal("Entity 303"), BossEvent.BossBarColor.WHITE, BossEvent.BossBarOverlay.NOTCHED_20
+		Component.empty(), BossEvent.BossBarColor.WHITE, BossEvent.BossBarOverlay.NOTCHED_20
 	).setDarkenScreen(true);
 
 	private int invulnerableTicks;
@@ -346,29 +344,14 @@ public class Entity303 extends Monster {
 		return this.getPhase() < FINAL_PHASE && super.isAffectedByPotions();
 	}
 
+	/**
+	 * The bar has no text any more: the client draws it itself (BossBarRenderer, through BossHealthOverlayMixin) and picks the
+	 * fill by the colour, which is therefore a plain function of the phase (white = 1, purple = 2, red = 3).
+	 */
 	private void updateBossBar() {
 		this.bossEvent.setProgress(Mth.clamp(this.getHealth() / this.getMaxHealth(), 0.0F, 1.0F));
-		if (this.tickCount % 4 != 0) {
-			return;
-		}
 		int phase = this.getPhase();
-		BossEvent.BossBarColor color = switch (phase) {
-			case 3 -> (this.tickCount / 8) % 2 == 0 ? BossEvent.BossBarColor.RED : BossEvent.BossBarColor.PURPLE;
-			case 2 -> BossEvent.BossBarColor.PURPLE;
-			default -> BossEvent.BossBarColor.WHITE;
-		};
-		this.bossEvent.setColor(color);
-		this.bossEvent.setName(this.buildBarTitle(phase));
-	}
-
-	private Component buildBarTitle(int phase) {
-		ChatFormatting color = phase == 1 ? ChatFormatting.WHITE : phase == 2 ? ChatFormatting.LIGHT_PURPLE : ChatFormatting.RED;
-		String tag = phase == 1 ? "" : phase == 2 ? "  [ENRAGED]" : "  [FINAL FORM]";
-		String hp = "  " + Mth.ceil(this.getHealth()) + " / " + Mth.ceil(this.getMaxHealth());
-		MutableComponent title = Component.literal("☠ ");
-		title.append(this.getName().copy().withStyle(ChatFormatting.BOLD));
-		title.append(Component.literal(" ☠" + hp + tag));
-		return title.withStyle(color);
+		this.bossEvent.setColor(phase >= 3 ? BossEvent.BossBarColor.RED : phase == 2 ? BossEvent.BossBarColor.PURPLE : BossEvent.BossBarColor.WHITE);
 	}
 
 	@Override

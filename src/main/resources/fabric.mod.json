@@ -17,6 +17,12 @@
 			"com.entity303.client.Entity303Client"
 		]
 	},
+	"mixins": [
+		{
+			"config": "entity303.client.mixins.json",
+			"environment": "client"
+		}
+	],
 	"depends": {
 		"fabricloader": ">=0.18.0",
 		"minecraft": "~1.21.11",
