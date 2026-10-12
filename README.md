@@ -41,6 +41,11 @@ when an update is waiting). Nothing is replaced while the game is running.
 * publish a version: bump nothing, just `git tag v1.2.2 && git push origin v1.2.2`; the *Release* GitHub Action builds it with that version
   and publishes `entity-303-1.2.2.jar` + `entity-303-1.2.2.jar.sha256`
 
+**Ability Keys updates itself too** (from 1.2.0, when it is installed as its own `ability-keys-<version>.jar`): the same release carries
+`ability-keys-<version>.jar` + `.sha256` (the version is read from the jar's file name, because the tag is the Entity 303 version), and
+the same check, SHA-256 test and swap-on-exit apply. Turn it off with `"autoUpdate": false` in `config/abilitykeys.json`. The copy packed
+inside the Entity 303 jar is updated together with Entity 303.
+
 ## Build
 
 ```
