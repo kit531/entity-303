@@ -37,7 +37,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           AK_VERSION=$(grep '^ability_keys_version=' gradle.properties | cut -d= -f2 | tr -d '\r')
-          FILES=("build/libs/entity-303-${VERSION}.jar" "build/libs/entity-303-${VERSION}.jar.sha256" "ability-keys/build/libs/ability-keys-${AK_VERSION}.jar")
+          (cd ability-keys/build/libs && sha256sum "ability-keys-${AK_VERSION}.jar" > "ability-keys-${AK_VERSION}.jar.sha256")
+          FILES=("build/libs/entity-303-${VERSION}.jar" "build/libs/entity-303-${VERSION}.jar.sha256" "ability-keys/build/libs/ability-keys-${AK_VERSION}.jar" "ability-keys/build/libs/ability-keys-${AK_VERSION}.jar.sha256")
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
             # the release was already created in the GitHub web UI: just attach the files
             gh release upload "$GITHUB_REF_NAME" "${FILES[@]}" --clobber
