@@ -52,6 +52,9 @@ import net.minecraft.world.phys.Vec3;
  *  2  Scythe Hook  the scythe is thrown, hooks the first mob/player it hits (through blocks) and drags it to the thrower
  *  3  Soul Steal   the next hit takes 2 hearts of max health from the target and gives them to the thrower for 20 s
  *  4  Dash         a leap that ends in a burst of black dust that hurts everything around the landing point
+ *
+ * Passive (cannot be switched off, only while the scythe is in the main hand): every hit of the scythe itself has a 10 % chance
+ * of giving the target Wither for 3 seconds. The damage of the abilities does not roll for it (the Soul Laser withers anyway).
  */
 public final class ScytheAbilities {
 	public static final int SLOTS = AbilityKeysApi.SLOTS;
@@ -80,6 +83,9 @@ public final class ScytheAbilities {
 	private static final double DASH_RADIUS = 5.5;
 	private static final float DASH_DAMAGE = 7.0F;
 	private static final DustParticleOptions BLACK = new DustParticleOptions(0x000000, 2.6F);
+	// Passive: a hit with the scythe in the hand may wither the target
+	private static final float WITHER_CHANCE = 0.10F;
+	private static final int WITHER_TICKS = 3 * 20;
 
 	private static final Identifier SCYTHE_MODEL = Entity303Mod.id("reaper_scythe");
 
@@ -88,6 +94,8 @@ public final class ScytheAbilities {
 	private static final List<Dash> DASHES = new ArrayList<>();
 	private static final List<Expiry> EXPIRIES = new ArrayList<>();
 	private static final Set<UUID> BEING_PULLED = new HashSet<>();
+	/** True while an ability hurts somebody, so that only real hits of the scythe roll for the Wither passive. */
+	private static boolean abilityDamage;
 
 	private ScytheAbilities() {
 	}
@@ -161,6 +169,16 @@ public final class ScytheAbilities {
 				stealSouls(attacker, entity);
 			}
 		});
+		// passive: each hit with the scythe in the hand has a 10 % chance of 3 seconds of Wither
+		ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamage, damage, blocked) -> {
+			if (blocked || damage <= 0.0F || abilityDamage || !(source.getEntity() instanceof ServerPlayer attacker)
+				|| source.getDirectEntity() != attacker || entity == attacker || !isScythe(attacker.getMainHandItem())) {
+				return;
+			}
+			if (attacker.getRandom().nextFloat() < WITHER_CHANCE) {
+				entity.addEffect(new MobEffectInstance(MobEffects.WITHER, WITHER_TICKS, 0), attacker);
+			}
+		});
 		// being dragged through blocks must not suffocate
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) ->
 			!(source.is(DamageTypes.IN_WALL) && BEING_PULLED.contains(entity.getUUID())));
@@ -173,6 +191,9 @@ public final class ScytheAbilities {
 
 	// -------------------------------------------------------------- activation --
 	private static void onActivate(ServerPlayer player, int slot) {
+		if (slot > SLOTS) {
+			return;   // the passive switch key of the Ability Keys mod belongs to other items
+		}
 		if (!isScythe(player.getMainHandItem()) || !player.isAlive() || player.isSpectator()) {
 			return;
 		}
@@ -223,7 +244,7 @@ public final class ScytheAbilities {
 		AABB box = new AABB(origin, end).inflate(1.8);
 		for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != player && e.isAlive() && !e.isSpectator())) {
 			Vec3 center = victim.position().add(0.0, victim.getBbHeight() * 0.5, 0.0);
-			if (distanceToSegment(center, origin, end) <= 1.5 + victim.getBbWidth() * 0.5 && victim.hurtServer(level, source, LASER_DAMAGE)) {
+			if (distanceToSegment(center, origin, end) <= 1.5 + victim.getBbWidth() * 0.5 && abilityHurt(victim, level, source, LASER_DAMAGE)) {
 				victim.addEffect(new MobEffectInstance(MobEffects.WITHER, 60, 0), player);
 				victim.push(dir.x * 0.6, 0.35, dir.z * 0.6);
 				victim.hurtMarked = true;
@@ -240,6 +261,16 @@ public final class ScytheAbilities {
 		player.swing(InteractionHand.MAIN_HAND, true);
 		level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.WITHER_SHOOT, SoundSource.PLAYERS, 1.5F, 0.7F);
 		return true;
+	}
+
+	/** Damage dealt by an ability (not a swing of the scythe). */
+	private static boolean abilityHurt(LivingEntity victim, ServerLevel level, DamageSource source, float amount) {
+		abilityDamage = true;
+		try {
+			return victim.hurtServer(level, source, amount);
+		} finally {
+			abilityDamage = false;
+		}
 	}
 
 	private static double distanceToSegment(Vec3 p, Vec3 a, Vec3 b) {
@@ -346,7 +377,7 @@ public final class ScytheAbilities {
 		h.level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, hold.x, hold.y, hold.z, 5, 0.25, 0.35, 0.25, 0.03);
 		if (++h.sinceDamage >= HOOK_DAMAGE_INTERVAL) {
 			h.sinceDamage = 0;
-			t.hurtServer(h.level, h.level.damageSources().playerAttack(owner), HOOK_DAMAGE);
+			abilityHurt(t, h.level, h.level.damageSources().playerAttack(owner), HOOK_DAMAGE);
 		}
 		return false;
 	}
@@ -444,7 +475,7 @@ public final class ScytheAbilities {
 		DamageSource source = level.damageSources().playerAttack(p);
 		for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(DASH_RADIUS, 1.5, DASH_RADIUS),
 			e -> e != p && e.isAlive() && !e.isSpectator())) {
-			if (victim.hurtServer(level, source, DASH_DAMAGE)) {
+			if (abilityHurt(victim, level, source, DASH_DAMAGE)) {
 				Vec3 away = victim.position().subtract(p.position());
 				away = away.lengthSqr() < 1.0E-4 ? new Vec3(0.0, 0.0, 1.0) : away.normalize();
 				victim.push(away.x * 0.8, 0.4, away.z * 0.8);
