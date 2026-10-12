@@ -3,12 +3,16 @@ package com.abilitykeys.client;
 import com.abilitykeys.AbilityKeys;
 import com.abilitykeys.AbilityKeysApi;
 import com.abilitykeys.ActivateAbilityPayload;
+import com.abilitykeys.update.ModUpdater;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 
@@ -43,6 +47,17 @@ public class AbilityKeysClient implements ClientModInitializer {
 				}
 			}
 		});
+
+		// tell the player when an update of the mod is waiting for a restart: now, and again whenever a world is joined
+		ModUpdater.setReadyListener(version -> Minecraft.getInstance().execute(() -> announceUpdate(Minecraft.getInstance())));
+		ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> client.execute(() -> announceUpdate(client)));
+	}
+
+	private static void announceUpdate(Minecraft client) {
+		String version = ModUpdater.readyVersion();
+		if (version != null && client.player != null) {
+			client.gui.getChat().addMessage(Component.literal("[Ability Keys] Update " + version + " downloaded. Restart the game to use it."));
+		}
 	}
 
 	/** The key mapping of ability {@code slot} (1..4; 5 is the passive switch), for HUDs that want to show the bound key. */
