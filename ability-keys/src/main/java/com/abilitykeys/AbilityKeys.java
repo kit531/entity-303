@@ -1,5 +1,6 @@
 package com.abilitykeys;
 
+import com.abilitykeys.update.ModUpdater;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -12,6 +13,7 @@ public class AbilityKeys implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		ModUpdater.start();
 		PayloadTypeRegistry.playC2S().register(ActivateAbilityPayload.TYPE, ActivateAbilityPayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(ActivateAbilityPayload.TYPE,
 			(payload, context) -> AbilityKeysApi.dispatch(context.player(), payload.slot()));
