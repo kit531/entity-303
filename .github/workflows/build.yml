@@ -16,3 +16,12 @@ jobs:
           distribution: temurin
           java-version: 21
       - run: chmod +x gradlew && ./gradlew build --no-daemon --console=plain
+      - name: Keep the jars of this build
+        uses: actions/upload-artifact@v4
+        with:
+          name: entity-303-jars
+          path: |
+            build/libs/*.jar
+            ability-keys/build/libs/*.jar
+            !build/libs/*-sources.jar
+            !ability-keys/build/libs/*-sources.jar
