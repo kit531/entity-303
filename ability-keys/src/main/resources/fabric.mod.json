@@ -3,7 +3,7 @@
 	"id": "abilitykeys",
 	"version": "${version}",
 	"name": "Ability Keys",
-	"description": "Four rebindable ability keys (G, H, J, K by default). Other mods register what each key does.",
+	"description": "Four rebindable ability keys (G, H, J, K by default) and a passive switch key (V). Other mods register what each key does. Updates itself from GitHub Releases.",
 	"authors": [
 		"adamk"
 	],
