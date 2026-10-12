@@ -82,6 +82,12 @@ Entity 303.
 | J | **Soul Steal** - your next hit takes 2 hearts of max health from the target and gives them to you for 20 s | 45 s |
 | K | **Dash** - a leap that ends in a burst of black dust, 7 damage around the landing point | 20 s |
 
+**Passive** (cannot be switched off, works only while the scythe is in the main hand): every hit of the scythe has a 10% chance to
+give the target Wither for 3 seconds (the abilities do not roll for it). The scythe's attack damage is 10 (was 11).
+
+The Ability Keys mod has a fifth key, **Disable Passive Ability 1** (V by default), which other mods use to switch an item's
+first passive off and on (the Gale Mace of the Giant Breeze mod). The scythe does not use it.
+
 The four cooldowns are drawn above the health and hunger bars while the scythe is held (an icon per ability, the key above
 it, READY when it can be used).
 
