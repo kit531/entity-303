@@ -108,7 +108,7 @@
 									{
 										"type": "minecraft:attack_damage",
 										"id": "minecraft:base_attack_damage",
-										"amount": 10.0,
+										"amount": 9.0,
 										"operation": "add_value",
 										"slot": "mainhand"
 									},
@@ -132,6 +132,11 @@
 										"text": "Torn from the hand of Entity 303",
 										"color": "dark_red",
 										"italic": true
+									},
+									{
+										"text": "Passive: each hit has a 10% chance to Wither for 3 s",
+										"color": "gray",
+										"italic": false
 									}
 								]
 							}
