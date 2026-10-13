@@ -1,6 +1,7 @@
 package com.entity303;
 
 import com.entity303.ability.ScytheAbilities;
+import com.entity303.entity.DropShowcase;
 import com.entity303.registry.ModEntities;
 import com.entity303.registry.ModItems;
 import com.entity303.update.ModUpdater;
@@ -22,6 +23,7 @@ public class Entity303Mod implements ModInitializer {
 		ModEntities.register();
 		ModItems.register();
 		ScytheAbilities.init();
+		DropShowcase.init();
 		ModUpdater.start();
 	}
 }
