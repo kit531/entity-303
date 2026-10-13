@@ -20,7 +20,7 @@ Adds **Entity 303** (the white hooded figure with the black face, red eyes and a
 * **final form (phase 3):** immune to every effect (good or bad, potions included), all his attacks hit 1.5x harder, and he heals for 50% of the health he takes from players
 * **built for 4-5 geared players:** he shrugs off most of the damage (he takes 22% of it from up to 4 players, 40% from 5 or more) and attacks twice as often, but one player can only lose 4 / 6 / 8 hearts (phase 1 / 2 / 3) per 3 seconds, so somebody in full diamond with Protection III who keeps eating golden apples cannot be killed. Four such players have a coin-flip fight, five win clearly (see `tools/fight_sim.py`); every extra player makes his attacks hit 5% harder
 * he counts the players around him: more beams, drains and minions, shorter pauses (work in progress, see TODO_HANDOFF.md)
-* drops: 2 nether stars, 16-32 diamonds, 4-8 netherite scrap, a totem of undying, 1-3 enchanted golden apples, the **Reaper's Scythe** (a netherite axe with the scythe's own texture and name), 500 XP
+* drops: only the **Reaper's Scythe** (a netherite axe with the scythe's own texture and name), and 500 XP. When he dies the scythe rises into the air, turns in a ring of soul fire for about 4.5 seconds and only then falls as an item
 
 ## Play it
 
